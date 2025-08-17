@@ -1,0 +1,14 @@
+<!-- templates/post/list.html -->
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="utf-8"><title>게시판</title></head>
+<body>
+<h1>게시글 목록</h1>
+<ul>
+    <li th:each="p : ${posts}">
+        <span th:text="${p.id}"></span>
+        <strong th:text="${p.title}"></strong>
+    </li>
+</ul>
+</body>
+</html>
