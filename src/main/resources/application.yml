@@ -1,11 +1,10 @@
-server:
-  port: 8080
-
 spring:
+  application:
+    name: memorylab
   datasource:
-    url: jdbc:mysql://localhost:3306/memorylab?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=utf8
-    username: mlab
-    password: mlab1234!
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -14,9 +13,11 @@ spring:
         format_sql: true
   thymeleaf:
     cache: false
+
 jwt:
-  secret: "PzVHJEUmQVm+wuBHtK+L4qGHKYRPdL1YgGlG3Jv9H6Y"
+  secret: ${JWT_SECRET}
   access-token-minutes: 60
+
 logging:
   level:
     org.springframework.security: DEBUG

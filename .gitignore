@@ -35,3 +35,26 @@ out/
 
 ### VS Code ###
 .vscode/
+# --- Local & Secrets ---
+# Spring local profile files
+src/main/resources/application-local.yml
+src/main/resources/application-*.local.yml
+src/main/resources/application-*.secret.yml
+
+# Env files
+.env
+*.env
+.env.*
+
+# Keys & certs
+*.jks
+*.p12
+*.pem
+*.key
+*.crt
+*.der
+*.keystore
+
+# Logs
+logs/
+*.log
