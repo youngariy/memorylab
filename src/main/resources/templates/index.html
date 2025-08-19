@@ -4,6 +4,16 @@
 <head><meta charset="utf-8"><title>MemoryLab</title></head>
 <body>
 <h1>MemoryLab 홈</h1>
+<nav>
+    <a href="/login">로그인</a> |
+    <a href="/signup">회원가입</a> |
+    <a href="/post/list">게시판</a>
+</nav>
 <p>여기서부터 기능을 붙여나갑니다.</p>
+<p id="status">로그인 상태: 확인 중...</p>
+<script>
+    const t = localStorage.getItem("accessToken");
+    document.getElementById("status").textContent = t ? "로그인 상태: 토큰 보유" : "로그인 상태: 미로그인";
+</script>
 </body>
 </html>

@@ -15,5 +15,5 @@ public class PostService {
         return repo.save(Post.builder().title(title).content(content).build());
     }
     @Transactional(readOnly = true)
-    public List<Post> list(){ return repo.findAll(); }
+    public List<Post> findAll(){ return repo.findAll(); }
 }

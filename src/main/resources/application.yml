@@ -17,3 +17,6 @@ spring:
 jwt:
   secret: "PzVHJEUmQVm+wuBHtK+L4qGHKYRPdL1YgGlG3Jv9H6Y"
   access-token-minutes: 60
+logging:
+  level:
+    org.springframework.security: DEBUG

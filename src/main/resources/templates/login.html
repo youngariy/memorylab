@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>로그인</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
+        form { border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 300px; padding: 8px; }
+        button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<h1>로그인</h1>
+<form id="login-form">
+    <div class="form-group">
+        <label for="email">이메일:</label>
+        <input type="email" id="email" name="email" required>
+    </div>
+    <div class="form-group">
+        <label for="password">비밀번호:</label>
+        <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit">로그인</button>
+</form>
+<p id="message"></p>
+
+<script>
+    document.getElementById('login-form').addEventListener('submit', async function(event) {
+        // 1. form의 기본 제출 동작을 막습니다.
+        event.preventDefault();
+
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const messageEl = document.getElementById('message');
+
+        // 2. 입력된 데이터를 JSON 객체로 만듭니다.
+        const data = {
+            email: email,
+            password: password
+        };
+
+        // 3. fetch API를 사용해 서버로 JSON 데이터를 POST 방식으로 전송합니다.
+        try {
+            const response = await fetch('/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                // 4. 응답이 성공적이면(2xx), accessToken을 받아 localStorage에 저장합니다.
+                const result = await response.json();
+                localStorage.setItem('accessToken', result.accessToken);
+                messageEl.textContent = '로그인 성공! 게시판으로 이동합니다.';
+                messageEl.style.color = 'green';
+                window.location.href = '/post/list'; // 게시판 페이지로 이동
+            } else {
+                // 5. 응답이 실패하면 오류 메시지를 표시합니다.
+                messageEl.textContent = '로그인 실패. 이메일 또는 비밀번호를 확인하세요.';
+                messageEl.style.color = 'red';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            messageEl.textContent = '오류가 발생했습니다.';
+            messageEl.style.color = 'red';
+        }
+    });
+</script>
+</body>
+</html>
