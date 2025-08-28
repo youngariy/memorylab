@@ -59,7 +59,7 @@
                 localStorage.setItem('accessToken', result.accessToken);
                 messageEl.textContent = '로그인 성공! 게시판으로 이동합니다.';
                 messageEl.style.color = 'green';
-                window.location.href = '/post/list'; // 게시판 페이지로 이동
+                window.location.href = 'board/list'; // 게시판 페이지로 이동
             } else {
                 // 5. 응답이 실패하면 오류 메시지를 표시합니다.
                 messageEl.textContent = '로그인 실패. 이메일 또는 비밀번호를 확인하세요.';

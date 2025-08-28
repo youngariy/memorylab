@@ -30,7 +30,7 @@ public class AuthService {
 
         var u = users.save(User.builder()
                 .email(req.getEmail())
-                .passwordHash(encoder.encode(req.getPassword()))
+                .password(encoder.encode(req.getPassword()))
                 .nickname(req.getNickname())
                 .name(req.getName())
                 .emailVerified(false)
@@ -38,7 +38,7 @@ public class AuthService {
 
         var token = tokens.save(EmailToken.issue(u, EmailToken.TokenType.VERIFY, 60));
         var link = verifyBaseUrl + "?token=" + token.getToken();
-        mail.send(u.getEmail(), "MemoryLab 이메일 인증", "아래 링크로 인증하세요:\n" + link);
+//        mail.send(u.getEmail(), "MemoryLab 이메일 인증", "아래 링크로 인증하세요:\n" + link);
     }
 
     public void verifyEmail(String token){
@@ -53,7 +53,7 @@ public class AuthService {
     public String login(LoginReq req){
         var u = users.findByEmail(req.getEmail()).orElseThrow(() -> new IllegalArgumentException("계정 없음"));
         if (!u.isEmailVerified()) throw new IllegalStateException("이메일 미인증");
-        if (!encoder.matches(req.getPassword(), u.getPasswordHash())) throw new IllegalArgumentException("비밀번호 불일치");
+        if (!encoder.matches(req.getPassword(), u.getPassword())) throw new IllegalArgumentException("비밀번호 불일치");
         return jwt.createAccessToken(u.getId(), u.getEmail());
     }
 }

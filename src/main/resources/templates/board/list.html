@@ -5,9 +5,9 @@
 <body>
 <h1>게시글 목록</h1>
 <ul>
-    <li th:each="p : ${posts}">
-        <span th:text="${p.id}"></span>
-        <strong th:text="${p.title}"></strong>
+    <li th:each="b : ${boards}">
+        <span th:text="${b.id}"></span>
+        <strong th:text="${b.title}"></strong>
     </li>
 </ul>
 </body>

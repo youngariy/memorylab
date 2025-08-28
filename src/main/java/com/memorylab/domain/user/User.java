@@ -17,7 +17,7 @@ public class User {
     private String email;
 
     @Column(nullable=false)
-    private String passwordHash;
+    private String password;
 
     @Column(nullable=false, unique=true, length=40)
     private String nickname;

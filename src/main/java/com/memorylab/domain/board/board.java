@@ -1,11 +1,11 @@
 // Post.java
-package com.memorylab.domain.post;
+package com.memorylab.domain.board;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-public class Post {
+public class board {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

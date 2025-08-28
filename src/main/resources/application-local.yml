@@ -1,0 +1,7 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/memorylab?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul&characterEncoding=utf8
+    username: mlab
+    password: mlab1234!
+jwt:
+  secret: "PzVHJEUmQVm+wuBHtK+L4qGHKYRPdL1YgGlG3Jv9H6Y"

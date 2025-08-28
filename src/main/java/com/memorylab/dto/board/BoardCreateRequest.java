@@ -1,10 +1,10 @@
 // PostCreateRequest.java
-package com.memorylab.dto.post;
+package com.memorylab.dto.board;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 
 @Getter
-public class PostCreateRequest {
+public class BoardCreateRequest {
     @NotBlank private String title;
     private String content;
 }
