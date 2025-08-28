@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"><title>글 수정</title>
+    <style>
+        body{font-family:sans-serif;max-width:760px;margin:24px auto;padding:0 12px}
+        input,select,textarea,button{width:100%;padding:8px;box-sizing:border-box}
+        .row{margin:10px 0}
+    </style>
+</head>
+<body>
+<a href="/board/list">← 목록</a>
+<h1>글 수정</h1>
+
+<form id="f">
+    <div class="row">
+        <label>카테고리
+            <select id="category" required>
+                <option>여행</option><option>가족</option><option>친구</option><option>기타</option>
+            </select>
+        </label>
+    </div>
+    <div class="row">
+        <label>제목
+            <input id="title" maxlength="120" required>
+        </label>
+    </div>
+    <div class="row">
+        <label>내용
+            <textarea id="content" rows="12" required></textarea>
+        </label>
+    </div>
+    <div class="row">
+        <button>수정 완료</button>
+    </div>
+</form>
+
+<script>
+    const token = localStorage.getItem('accessToken');
+    const id = new URLSearchParams(location.search).get('id');
+    if (!id) { alert('잘못된 접근'); location.href='/board/list'; }
+
+    async function load(){
+        const r = await fetch(`/api/board/${id}`, { headers: token?{Authorization:`Bearer ${token}`}:{} });
+        if (r.status===401) return location.href='/login';
+        const b = await r.json();
+        document.getElementById('title').value = b.title || '';
+        document.getElementById('content').value = b.content || '';
+        document.getElementById('category').value = b.category || '기타';
+    }
+
+    document.getElementById('f').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        if (!token) return location.href='/login';
+        const body = {
+            title:   document.getElementById('title').value,
+            content: document.getElementById('content').value,
+            category:document.getElementById('category').value
+        };
+        const r = await fetch(`/api/board/${id}`, {
+            method:'PUT',
+            headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
+            body: JSON.stringify(body)
+        });
+        if (r.ok) location.href = `/board/view?id=${id}`;
+        else if (r.status===401) location.href='/login';
+        else alert('수정 실패');
+    });
+
+    load();
+</script>
+</body>
+</html>

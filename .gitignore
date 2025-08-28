@@ -1,11 +1,14 @@
+# Project scaffold
 HELP.md
-.gradle
+
+# Gradle
+.gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### STS ###
+### STS / Eclipse ###
 .apt_generated
 .classpath
 .factorypath
@@ -18,7 +21,7 @@ bin/
 !**/src/test/**/bin/
 
 ### IntelliJ IDEA ###
-.idea
+.idea/
 *.iws
 *.iml
 *.ipr
@@ -35,16 +38,27 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### OS noise ###
+.DS_Store
+Thumbs.db
+
 # --- Local & Secrets ---
-# Spring local profile files
+# Spring local/secret profiles (버전 관리X)
 src/main/resources/application-local.yml
 src/main/resources/application-*.local.yml
 src/main/resources/application-*.secret.yml
+# 팀 내에서 종종 쓰는 다른 표기도 커버
+src/main/resources/application-*-secret.yml
+src/main/resources/application-*-secrets.yml
 
 # Env files
 .env
 *.env
 .env.*
+
+# direnv (쓰는 경우)
+.envrc
 
 # Keys & certs
 *.jks
@@ -55,6 +69,8 @@ src/main/resources/application-*.secret.yml
 *.der
 *.keystore
 
-# Logs
+# Logs & runtime artifacts
 logs/
 *.log
+nohup.out
+*.out

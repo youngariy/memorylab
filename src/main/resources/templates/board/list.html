@@ -1,14 +1,114 @@
-<!-- templates/post/list.html -->
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="utf-8"><title>게시판</title></head>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"><title>게시판 목록</title>
+    <style>
+        body{font-family:sans-serif;max-width:960px;margin:24px auto;padding:0 12px}
+        header a{margin-right:8px}
+        table{width:100%;border-collapse:collapse;margin-top:12px}
+        th,td{border:1px solid #ddd;padding:8px}
+        th{background:#f6f6f6}
+        .pager a{margin:0 4px;text-decoration:none}
+        .chip{display:inline-block;padding:2px 8px;border:1px solid #ddd;border-radius:12px;font-size:.85rem}
+    </style>
+</head>
 <body>
-<h1>게시글 목록</h1>
-<ul>
-    <li th:each="b : ${boards}">
-        <span th:text="${b.id}"></span>
-        <strong th:text="${b.title}"></strong>
-    </li>
-</ul>
+<header>
+    <h1>게시판</h1>
+    <nav>
+        <a href="/" >홈</a> |
+        <a href="/board/new">새 글</a> |
+        <a href="/login">로그인</a>
+    </nav>
+</header>
+
+<form id="search" style="display:flex;gap:8px;align-items:center;margin-top:8px">
+    <input type="text" id="q" placeholder="키워드 검색">
+    <select id="category">
+        <option value="">전체</option>
+        <option>여행</option><option>가족</option><option>친구</option><option>기타</option>
+    </select>
+    <button>검색</button>
+</form>
+
+<table>
+    <thead>
+    <tr>
+        <th style="width:50%">제목</th>
+        <th>카테고리</th>
+        <th>작성자</th>
+        <th>조회</th>
+        <th>작성일</th>
+    </tr>
+    </thead>
+    <tbody id="rows">
+    <tr><td colspan="5" style="text-align:center">불러오는 중...</td></tr>
+    </tbody>
+</table>
+
+<div class="pager" id="pager" style="margin-top:10px"></div>
+
+<script>
+    const token = localStorage.getItem('accessToken');
+    const rows  = document.getElementById('rows');
+    const pager = document.getElementById('pager');
+    const qEl   = document.getElementById('q');
+    const cEl   = document.getElementById('category');
+
+    // URL 파라미터 유지
+    const url = new URL(location.href);
+    const page = Number(url.searchParams.get('page') || 0);
+    qEl.value = url.searchParams.get('q') || '';
+    cEl.value = url.searchParams.get('category') || '';
+
+    async function load() {
+        rows.innerHTML = `<tr><td colspan="5" style="text-align:center">불러오는 중...</td></tr>`;
+        try {
+            const resp = await fetch(`/api/board?q=${encodeURIComponent(qEl.value)}&category=${encodeURIComponent(cEl.value)}&page=${page}&size=10`, {
+                headers: token ? {Authorization: `Bearer ${token}`} : {}
+            });
+            if (resp.status === 401) return location.href = '/login';
+            const pageData = await resp.json();
+
+            if (!pageData.content || pageData.content.length === 0) {
+                rows.innerHTML = `<tr><td colspan="5" style="text-align:center">게시글이 없습니다.</td></tr>`;
+            } else {
+                rows.innerHTML = pageData.content.map(it => `
+          <tr>
+            <td><a href="/board/view?id=${it.id}">${escapeHtml(it.title)}</a></td>
+            <td><span class="chip">${escapeHtml(it.category || '')}</span></td>
+            <td>${escapeHtml(it.authorNickname || '')}</td>
+            <td>${it.viewCount ?? 0}</td>
+            <td>${fmt(it.createdAt)}</td>
+          </tr>
+        `).join('');
+            }
+
+            // 페이지네이션
+            let html = '';
+            if (!pageData.first) html += `<a href="/board/list?q=${encodeURIComponent(qEl.value)}&category=${encodeURIComponent(cEl.value)}&page=${pageData.number-1}">이전</a>`;
+            for (let i=0;i<pageData.totalPages;i++){
+                html += (i===pageData.number)
+                    ? `<strong>[${i+1}]</strong>`
+                    : `<a href="/board/list?q=${encodeURIComponent(qEl.value)}&category=${encodeURIComponent(cEl.value)}&page=${i}">${i+1}</a>`;
+            }
+            if (!pageData.last) html += `<a href="/board/list?q=${encodeURIComponent(qEl.value)}&category=${encodeURIComponent(cEl.value)}&page=${pageData.number+1}">다음</a>`;
+            pager.innerHTML = html;
+        } catch (e) {
+            console.error(e);
+            rows.innerHTML = `<tr><td colspan="5" style="text-align:center;color:red">목록을 불러오지 못했습니다.</td></tr>`;
+        }
+    }
+
+    document.getElementById('search').addEventListener('submit', (e)=>{
+        e.preventDefault();
+        location.href = `/board/list?q=${encodeURIComponent(qEl.value)}&category=${encodeURIComponent(cEl.value)}&page=0`;
+    });
+
+    function fmt(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleString(); }
+    function escapeHtml(s){ return (s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    load();
+</script>
 </body>
 </html>

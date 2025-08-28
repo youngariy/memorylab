@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"><title>게시글 보기</title>
+    <style>
+        body{font-family:sans-serif;max-width:900px;margin:24px auto;padding:0 12px}
+        .meta{color:#666;font-size:.9rem}
+        .toolbar a, .toolbar button{margin-right:8px}
+        #viewer{width:100%;height:360px;background:#f5f5f5;display:grid;place-items:center;margin:12px 0}
+        textarea{width:100%;padding:8px}
+    </style>
+</head>
+<body>
+<header>
+    <a href="/board/list">← 목록</a>
+</header>
+
+<h1 id="title">제목</h1>
+<div class="meta">
+    <span id="author"></span> · <span id="createdAt"></span> · 조회 <span id="views"></span> · <span id="category" class="chip"></span>
+</div>
+
+<div class="toolbar" style="margin-top:8px">
+    <a id="edit" href="#">수정</a>
+    <button id="remove" type="button">삭제</button>
+</div>
+
+<div id="viewer"><em>여기에 변환된 3D 뷰어가 표시됩니다.</em></div>
+
+<article id="content" style="white-space:pre-wrap;line-height:1.6"></article>
+
+<hr>
+
+<h3>댓글</h3>
+<ul id="commentList"><li>불러오는 중...</li></ul>
+
+<form id="commentForm" style="margin-top:8px">
+    <textarea id="commentText" rows="3" placeholder="댓글을 입력하세요" required></textarea>
+    <div style="margin-top:6px"><button>댓글 등록</button></div>
+</form>
+
+<script>
+    const token = localStorage.getItem('accessToken');
+    const params = new URLSearchParams(location.search);
+    const id = params.get('id');
+
+    if (!id) { alert('잘못된 접근입니다.'); location.href='/board/list'; }
+
+    async function load() {
+        try {
+            const r = await fetch(`/api/board/${id}`, { headers: token ? {Authorization:`Bearer ${token}`} : {} });
+            if (r.status===401) return location.href='/login';
+            const b = await r.json();
+            document.getElementById('title').textContent = b.title || '';
+            document.getElementById('author').textContent = b.authorNickname || '';
+            document.getElementById('createdAt').textContent = fmt(b.createdAt);
+            document.getElementById('views').textContent = b.viewCount ?? 0;
+            document.getElementById('category').textContent = b.category || '';
+            document.getElementById('content').textContent = b.content || '';
+
+            document.getElementById('edit').href = `/board/edit?id=${b.id}`;
+        } catch(e){ console.error(e); alert('글을 불러오지 못했습니다.'); }
+
+        // 댓글(선택: API 구현 시 사용)
+        try {
+            const rc = await fetch(`/api/board/${id}/comments`, { headers: token ? {Authorization:`Bearer ${token}`} : {} });
+            const list = document.getElementById('commentList');
+            if (rc.ok){
+                const arr = await rc.json();
+                if (!arr.length) list.innerHTML = `<li>첫 댓글을 남겨보세요.</li>`;
+                else list.innerHTML = arr.map(c=>`<li><b>${escapeHtml(c.author?.nickname||'')}</b> <small>${fmt(c.createdAt)}</small><div>${escapeHtml(c.content||'')}</div></li>`).join('');
+            } else {
+                list.innerHTML = `<li>댓글을 불러오지 못했습니다.</li>`;
+            }
+        } catch(e){ console.error(e); }
+    }
+
+    document.getElementById('remove').addEventListener('click', async ()=>{
+        if (!confirm('삭제하시겠습니까?')) return;
+        const r = await fetch(`/api/board/${id}`, { method:'DELETE', headers: { 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) }});
+        if (r.ok) location.href = '/board/list';
+        else alert('삭제 실패');
+    });
+
+    document.getElementById('commentForm').addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const content = document.getElementById('commentText').value.trim();
+        if (!content) return;
+        const r = await fetch(`/api/board/${id}/comments`, {
+            method:'POST',
+            headers:{ 'Content-Type':'application/json', ...(token?{Authorization:`Bearer ${token}`}:{}) },
+            body: JSON.stringify({content})
+        });
+        if (r.ok) { document.getElementById('commentText').value=''; load(); }
+        else if (r.status===401) location.href='/login';
+        else alert('댓글 등록 실패');
+    });
+
+    function fmt(iso){ if(!iso) return ''; const d=new Date(iso); return d.toLocaleString(); }
+    function escapeHtml(s){ return (s??'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    load();
+</script>
+</body>
+</html>

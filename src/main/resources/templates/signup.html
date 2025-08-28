@@ -17,59 +17,56 @@
 <h1>회원가입</h1>
 <form id="signup-form">
     <div class="form-group">
-        <label for="username">사용자 이름:</label>
-        <input type="text" id="username" name="username" required>
+        <label for="nickname">닉네임:</label>
+        <input type="text" id="nickname" required>
+    </div>
+    <div class="form-group">
+        <label for="name">이름:</label>
+        <input type="text" id="name" required>
     </div>
     <div class="form-group">
         <label for="email">이메일:</label>
-        <input type="email" id="email" name="email" required>
+        <input type="email" id="email" required>
     </div>
     <div class="form-group">
         <label for="password">비밀번호:</label>
-        <input type="password" id="password" name="password" required>
+        <input type="password" id="password" required>
     </div>
     <button type="submit">가입하기</button>
 </form>
 <p id="message"></p>
 
 <script>
-    document.getElementById('signup-form').addEventListener('submit', async function(event) {
-        event.preventDefault(); // 기본 제출 동작 방지
-
-        const username = document.getElementById('username').value;
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
-        const messageEl = document.getElementById('message');
-
-        // 서버로 보낼 JSON 데이터 생성
-        const data = {
-            username: username,
-            email: email,
-            password: password
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const body = {
+            nickname: document.getElementById('nickname').value,
+            name: document.getElementById('name').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
         };
+        const msg = document.getElementById('message');
 
         try {
-            // /auth/register 엔드포인트로 데이터 전송
-            const response = await fetch('/auth/register', {
+            const res = await fetch('/auth/register', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify(body)
             });
-
-            if (response.ok) {
-                messageEl.textContent = '회원가입 성공! 이메일을 확인하여 계정을 활성화해주세요.';
-                messageEl.style.color = 'green';
+            if (res.ok) {
+                msg.textContent = '회원가입 성공! 이메일 인증 메일을 확인하세요.';
+                msg.style.color = 'green';
             } else {
-                const errorData = await response.json(); // 서버에서 오는 에러 메시지
-                messageEl.textContent = '회원가입 실패: ' + (errorData.message || '입력값을 확인하세요.');
-                messageEl.style.color = 'red';
+                // 서버가 text/plain으로 에러를 주는 경우 대비
+                let errText;
+                try { errText = (await res.json()).message; } catch { errText = await res.text(); }
+                msg.textContent = '회원가입 실패: ' + (errText || '입력값을 확인하세요.');
+                msg.style.color = 'red';
             }
-        } catch (error) {
-            console.error('Error:', error);
-            messageEl.textContent = '오류가 발생했습니다.';
-            messageEl.style.color = 'red';
+        } catch (err) {
+            console.error(err);
+            msg.textContent = '오류가 발생했습니다.';
+            msg.style.color = 'red';
         }
     });
 </script>

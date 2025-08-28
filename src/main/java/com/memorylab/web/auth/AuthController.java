@@ -15,7 +15,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterReq req){
-        auth.register(req, "http://localhost:8080/auth/verify");
+        auth.register(req, "http://54.180.3.34:8080/auth/verify");
         return ResponseEntity.ok().build();
     }
 
