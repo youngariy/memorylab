@@ -4,6 +4,7 @@ import com.memorylab.dto.auth.AuthDtos.*;
 import com.memorylab.service.auth.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;   // ★ 추가
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,9 +14,12 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
     private final AuthService auth;
 
+    @Value("${app.auth.verify-base-url}")   // ★ 주입
+    private String verifyBaseUrl;
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody @Valid RegisterReq req){
-        auth.register(req, "http://54.180.3.34:8080/auth/verify");
+        auth.register(req, verifyBaseUrl);  // ★ 하드코딩 대신 설정값 사용
         return ResponseEntity.ok().build();
     }
 

@@ -3,5 +3,23 @@ spring:
     url: jdbc:mysql://127.0.0.1:3306/memorylab
     username: mlab
     password: mlab1234!
+  config:
+    activate:
+      on-profile: local
+
+  mail:
+    username: dudqja8617@gmail.com
+    password: mtknbwtvcplftwxp
+  # 디버깅은 로컬에서만
+  mail.properties.mail.debug: true
+
+app:
+  auth:
+    verify-base-url: http://localhost:8080/auth/verify
+  mail:
+    from: dudqja8617@gmail.com
+
+
+
 jwt:
   secret: "PzVHJEUmQVm+wuBHtK+L4qGHKYRPdL1YgGlG3Jv9H6Y"

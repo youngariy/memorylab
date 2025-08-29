@@ -16,6 +16,33 @@ spring:
   thymeleaf:
     cache: false
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${SPRING_MAIL_USERNAME:}      # 비밀은 env로
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        transport.protocol: smtp
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+        smtp.ssl.trust: smtp.gmail.com
+
+app:
+  mail:
+    from: ${APP_MAIL_FROM:${SPRING_MAIL_USERNAME:}}
+  auth:
+    # 로컬 기본값(없으면 아래 local/prod에서 override)
+    verify-base-url: ${APP_AUTH_VERIFY_BASE_URL:http://localhost:8080/auth/verify}
+
+
+
 jwt:
   secret: ${JWT_SECRET}
   access-token-minutes: 60
