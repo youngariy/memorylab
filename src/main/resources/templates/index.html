@@ -1,18 +1,47 @@
 <!-- templates/index.html -->
 <!doctype html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="utf-8"><title>MemoryLab</title></head>
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <title>MemoryLab 홈</title>
+</head>
 <body>
 <h1>MemoryLab 홈</h1>
+
+<!-- 홈에서는 게시판만 고정 노출, 로그인/회원가입 or 내정보/로그아웃은 토큰 상태에 따라 토글 -->
 <nav>
-    <a href="/login">로그인</a> |
-    <a href="/signup">회원가입</a> |
-    <a href="/board/list">게시판</a>
+    <a href="/board/list">게시판</a> |
+    <span id="authLinks">
+      <a href="/login">로그인</a> | <a href="/signup">회원가입</a>
+    </span>
 </nav>
+
 <p id="status">로그인 상태: 확인 중...</p>
+
 <script>
-    const t = localStorage.getItem("accessToken");
-    document.getElementById("status").textContent = t ? "로그인 상태: 토큰 보유" : "로그인 상태: 미로그인";
+    const TOKEN_KEY = 'accessToken';
+    const token = localStorage.getItem(TOKEN_KEY);
+
+
+    document.getElementById('status').textContent =
+        token ? '로그인 상태: 로그인 중' : '로그인 상태: 미로그인';
+
+
+    const authLinks = document.getElementById('authLinks');
+    if (token) {
+        authLinks.innerHTML = `
+        <a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>
+      `;
+    }
+
+    // 로그아웃 클릭 처리
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'logoutBtn') {
+            e.preventDefault();
+            localStorage.removeItem(TOKEN_KEY);
+            location.reload();
+        }
+    });
 </script>
 </body>
 </html>

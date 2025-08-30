@@ -1,70 +1,146 @@
 <!doctype html>
 <html lang="ko">
 <head>
-    <meta charset="utf-8"><title>글 수정</title>
+    <meta charset="utf-8"/>
+    <title>글 수정</title>
     <style>
-        body{font-family:sans-serif;max-width:760px;margin:24px auto;padding:0 12px}
-        input,select,textarea,button{width:100%;padding:8px;box-sizing:border-box}
-        .row{margin:10px 0}
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+        nav { margin-bottom: 16px; }
+        nav a { margin-right: 8px; }
+        input, select, textarea { width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px; }
+        textarea { min-height: 240px; }
+        .row { margin-bottom: 12px; }
     </style>
 </head>
 <body>
-<a href="/board/list">← 목록</a>
-<h1>글 수정</h1>
+<!-- 공통 네비 -->
+<nav class="nav">
+    <a href="/">홈</a> |
+    <a href="/board/list">게시판</a> |
+    <a href="#" id="newLink">새 글</a> |
+    <span id="authLinks"></span>
+</nav>
 
-<form id="f">
-    <div class="row">
-        <label>카테고리
-            <select id="category" required>
-                <option>여행</option><option>가족</option><option>친구</option><option>기타</option>
+<main>
+    <h1>글 수정</h1>
+    <form id="f">
+        <div class="row">
+            <input name="title" maxlength="120" required placeholder="제목">
+        </div>
+        <div class="row">
+            <select name="category">
+                <option value="">분류 없음</option>
+                <option value="notice">공지</option>
+                <option value="free">자유</option>
             </select>
-        </label>
-    </div>
-    <div class="row">
-        <label>제목
-            <input id="title" maxlength="120" required>
-        </label>
-    </div>
-    <div class="row">
-        <label>내용
-            <textarea id="content" rows="12" required></textarea>
-        </label>
-    </div>
-    <div class="row">
-        <button>수정 완료</button>
-    </div>
-</form>
+        </div>
+        <div class="row">
+            <textarea name="content" required placeholder="내용"></textarea>
+        </div>
+        <button type="submit">저장</button>
+        <a id="cancel" href="#" style="margin-left:12px">취소</a>
+    </form>
+</main>
 
 <script>
-    const token = localStorage.getItem('accessToken');
-    const id = new URLSearchParams(location.search).get('id');
-    if (!id) { alert('잘못된 접근'); location.href='/board/list'; }
+    // ===== 공통 유틸 =====
+    const tokenKey = 'accessToken';
+    const getToken = () => localStorage.getItem(tokenKey);
 
-    async function load(){
-        const r = await fetch(`/api/board/${id}`, { headers: token?{Authorization:`Bearer ${token}`}:{} });
-        if (r.status===401) return location.href='/login';
-        const b = await r.json();
-        document.getElementById('title').value = b.title || '';
-        document.getElementById('content').value = b.content || '';
-        document.getElementById('category').value = b.category || '기타';
+    async function api(path, {method='GET', headers={}, body, raw=false} = {}) {
+        const h = {'Content-Type': 'application/json', ...headers};
+        const t = getToken();
+        if (t) h['Authorization'] = 'Bearer ' + t;
+        const res = await fetch(path, {method, headers: h, body});
+        if (res.status === 401) {
+            localStorage.removeItem(tokenKey);
+            alert('로그인이 필요합니다.');
+            location.href = '/login';
+            throw new Error('Unauthorized');
+        }
+        if (!res.ok) {
+            const msg = await res.text().catch(()=> '');
+            throw new Error(msg || ('HTTP '+res.status));
+        }
+        return raw ? res : res.json();
     }
 
-    document.getElementById('f').addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        if (!token) return location.href='/login';
-        const body = {
-            title:   document.getElementById('title').value,
-            content: document.getElementById('content').value,
-            category:document.getElementById('category').value
-        };
-        const r = await fetch(`/api/board/${id}`, {
-            method:'PUT',
-            headers:{'Content-Type':'application/json', Authorization:`Bearer ${token}`},
-            body: JSON.stringify(body)
+    const escapeHtml = (s) => (s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+    const fmt = (iso) => iso ? new Date(iso).toLocaleString() : '';
+
+    (function headerToggle(){
+        const t = getToken();
+        const auth = document.getElementById('authLinks');
+        const newLink = document.getElementById('newLink');
+        if (t) {
+            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
+            if (newLink) newLink.href = '/board/new';
+        } else {
+            if (auth) auth.innerHTML = `<a href="/login">로그인</a>`;
+            if (newLink) newLink.href = '/login';
+        }
+        // 수정 페이지에선 "새 글" 버튼 숨김
+        if (newLink) newLink.style.display = 'none';
+
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'logoutBtn') {
+                e.preventDefault();
+                localStorage.removeItem(tokenKey);
+                location.reload();
+            }
         });
-        if (r.ok) location.href = `/board/view?id=${id}`;
-        else if (r.status===401) location.href='/login';
-        else alert('수정 실패');
+    })();
+
+    // 로그인 필요
+    if (!getToken()) {
+        alert('로그인이 필요합니다.');
+        location.href = '/login';
+    }
+
+    // ===== 로딩/저장 + 미저장 이탈 방지 =====
+    const $ = (s)=>document.querySelector(s);
+    const id = new URLSearchParams(location.search).get('id');
+    const f = $('#f');
+
+    async function load(){
+        const d = await api(`/api/board/${id}`);
+        f.title.value = d.title || '';
+        f.content.value = d.content || '';
+        f.category.value = d.category || '';
+    }
+
+    window.__dirty = false;
+    f.addEventListener('input', ()=> { window.__dirty = true; });
+
+    window.addEventListener('beforeunload', (evt) => {
+        if (window.__dirty) { evt.preventDefault(); evt.returnValue = ''; }
+    });
+    document.addEventListener('click', (e)=>{
+        if (!window.__dirty) return;
+        const a = e.target.closest('a');
+        if (!a) return;
+        if (a.target || a.href.startsWith('javascript:')) return;
+        if (!confirm('변경 사항이 저장되지 않았습니다. 이동하시겠어요?')) e.preventDefault();
+    });
+
+    f.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const fd = new FormData(f);
+        const payload = {
+            title: (fd.get('title')||'').trim(),
+            content: (fd.get('content')||'').trim(),
+            category: fd.get('category') || null
+        };
+        await api(`/api/board/${id}`, {method:'PUT', body: JSON.stringify(payload)});
+        window.__dirty = false;
+        alert('저장되었습니다.');
+        location.href = `/board/view?id=${encodeURIComponent(id)}`;
+    });
+
+    document.getElementById('cancel').addEventListener('click', (e)=>{
+        e.preventDefault();
+        if (window.__dirty && !confirm('변경 사항이 저장되지 않았습니다. 취소하시겠어요?')) return;
+        location.href = `/board/view?id=${encodeURIComponent(id)}`;
     });
 
     load();

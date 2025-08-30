@@ -40,4 +40,10 @@ public class Board {
 
     public void increaseView(){ this.viewCount++; }
     public boolean isAuthor(Long userId){ return author!=null && author.getId().equals(userId); }
+    public void modify(String title, String content, String category) {
+        this.title = title;
+        this.content = content;
+        this.category = category;
+        this.updatedAt = LocalDateTime.now();
+    }
 }
