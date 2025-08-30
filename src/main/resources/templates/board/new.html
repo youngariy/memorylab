@@ -3,13 +3,15 @@
 <head>
     <meta charset="utf-8"/>
     <title>새 글</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+        body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin: 24px; max-width: 900px; }
         nav { margin-bottom: 16px; }
         nav a { margin-right: 8px; }
-        input, select, textarea { width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px; }
+        input, select, textarea { width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px; box-sizing: border-box; }
         textarea { min-height: 240px; }
         .row { margin-bottom: 12px; }
+        .actions { display:flex; gap:10px; align-items:center; }
     </style>
 </head>
 <body>
@@ -23,10 +25,11 @@
 
 <main>
     <h1>새 글</h1>
-    <form id="f">
+
+    <form id="f" novalidate>
         <div class="row">
             <label for="title">제목</label>
-            <input id="title" name="title" placeholder="제목" maxlength="120" required>
+            <input id="title" name="title" placeholder="제목" maxlength="120" required />
         </div>
 
         <div class="row">
@@ -35,6 +38,7 @@
                 <option value="">분류 없음</option>
                 <option value="notice">공지</option>
                 <option value="free">자유</option>
+                <option value="question">질문</option>
             </select>
         </div>
 
@@ -42,96 +46,145 @@
             <label for="content">내용</label>
             <textarea id="content" name="content" placeholder="내용" required></textarea>
         </div>
-        <button type="submit">등록</button>
-        <a id="cancel" href="/board/list" style="margin-left:12px">취소</a>
+
+        <div class="actions">
+            <button id="submitBtn" type="submit">등록</button>
+            <a id="cancel" href="/board/list">취소</a>
+        </div>
     </form>
 </main>
 
 <script>
-    // ===== 공통 유틸 =====
+    // ===== 토큰/공통 API =====
     const tokenKey = 'accessToken';
     const getToken = () => localStorage.getItem(tokenKey);
 
-    async function api(path, {method='GET', headers={}, body, raw=false} = {}) {
-        const h = {'Content-Type': 'application/json', ...headers};
+    async function api(path, { method='GET', headers={}, body } = {}) {
+        const h = { ...headers };
+        if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json';
+
         const t = getToken();
         if (t) h['Authorization'] = 'Bearer ' + t;
-        const res = await fetch(path, {method, headers: h, body});
+
+        const res = await fetch(path, { method, headers: h, body });
+
         if (res.status === 401) {
             localStorage.removeItem(tokenKey);
             alert('로그인이 필요합니다.');
             location.href = '/login';
-            throw new Error('Unauthorized');
+            throw new Error('401 Unauthorized');
         }
+
         if (!res.ok) {
-            const msg = await res.text().catch(()=> '');
-            throw new Error(msg || ('HTTP '+res.status));
+            let msg = `${res.status} ${res.statusText}`;
+            try {
+                const ct = res.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    const j = await res.json();
+                    if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`;
+                } else {
+                    const t = await res.text();
+                    if (t) msg += `: ${t}`;
+                }
+            } catch {}
+            throw new Error(msg);
         }
-        return raw ? res : res.json();
+
+        const ct = res.headers.get('content-type') || '';
+        return ct.includes('application/json') ? res.json() : null;
     }
 
-    const escapeHtml = (s) => (s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    const fmt = (iso) => iso ? new Date(iso).toLocaleString() : '';
-
+    // ===== 네비 토글(IIFE) =====
     (function headerToggle(){
         const t = getToken();
         const auth = document.getElementById('authLinks');
         const newLink = document.getElementById('newLink');
+
         if (t) {
             if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
             if (newLink) newLink.href = '/board/new';
         } else {
-            if (auth) auth.innerHTML = `<a href="/login">로그인</a>`;
+            if (auth) auth.innerHTML = `<a href="/login">로그인</a> | <a href="/signup">회원가입</a>`;
             if (newLink) newLink.href = '/login';
         }
-        // 새 글 페이지에선 "새 글" 버튼 숨김 (중복 진입 방지)
+        // 새 글 페이지에서는 "새 글" 링크 감춤(중복 진입 방지)
         if (newLink) newLink.style.display = 'none';
 
         document.addEventListener('click', (e) => {
             if (e.target && e.target.id === 'logoutBtn') {
                 e.preventDefault();
                 localStorage.removeItem(tokenKey);
-                location.reload();
+                location.href = '/';
             }
         });
     })();
 
-    // 로그인 필요
+    // ===== 비로그인 차단(이후 코드 진행 중지) =====
     if (!getToken()) {
+        // 위 headerToggle에서 링크도 바꿔주지만, 직접 접근 시 바로 보냄
         alert('로그인이 필요합니다.');
         location.href = '/login';
+        // 아래 코드 실행하지 않도록 return
     }
 
     // ===== 작성/저장 로직 + 미저장 이탈 방지 =====
-    const $ = (s)=>document.querySelector(s);
-    const f = $('#f');
+    const f = document.getElementById('f');
+    const submitBtn = document.getElementById('submitBtn');
 
-    window.__dirty = false;
-    f.addEventListener('input', ()=> { window.__dirty = true; });
+    let dirty = false;
+    f.addEventListener('input', () => { dirty = true; });
 
     window.addEventListener('beforeunload', (evt) => {
-        if (window.__dirty) { evt.preventDefault(); evt.returnValue = ''; }
+        if (dirty) { evt.preventDefault(); evt.returnValue = ''; }
     });
-    document.addEventListener('click', (e)=>{
-        if (!window.__dirty) return;
+
+    document.addEventListener('click', (e) => {
+        if (!dirty) return;
         const a = e.target.closest('a');
         if (!a) return;
-        if (a.target || a.href.startsWith('javascript:')) return;
+        if (a.target || (a.getAttribute('href') || '').startsWith('javascript:')) return;
         if (!confirm('변경 사항이 저장되지 않았습니다. 이동하시겠어요?')) e.preventDefault();
     });
 
-    f.addEventListener('submit', async (e)=>{
+    f.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        // 기본 검증
         const fd = new FormData(f);
         const payload = {
-            title: (fd.get('title')||'').trim(),
-            content: (fd.get('content')||'').trim(),
-            category: fd.get('category') || null
+            title: (fd.get('title') || '').trim(),
+            content: (fd.get('content') || '').trim(),
+            category: (fd.get('category') || '').trim() || null
         };
-        const res = await api('/api/board', {method:'POST', body: JSON.stringify(payload)});
-        window.__dirty = false;
-        alert('등록되었습니다.');
-        location.href = `/board/view?id=${encodeURIComponent(res.id)}`;
+        if (!payload.title || !payload.content) {
+            alert('제목과 내용을 입력하세요.');
+            return;
+        }
+
+        // 중복 제출 방지
+        if (submitBtn) submitBtn.disabled = true;
+
+        try {
+            const out = await api('/api/board', {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+
+            dirty = false;
+            alert('등록되었습니다.');
+
+            const newId = out?.id;
+            if (newId != null) {
+                location.href = '/board/view?id=' + encodeURIComponent(newId);
+            } else {
+                location.href = '/board/list';
+            }
+        } catch (err) {
+            console.error(err);
+            alert('등록 실패: ' + (err?.message || err));
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
     });
 </script>
 </body>
