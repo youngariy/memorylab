@@ -13,7 +13,6 @@
     </style>
 </head>
 <body>
-<!-- 공통 네비 -->
 <nav class="nav">
     <a href="/">홈</a> |
     <a href="/board/list">게시판</a> |
@@ -30,8 +29,15 @@
         <div class="row">
             <select name="category">
                 <option value="">분류 없음</option>
-                <option value="notice">공지</option>
-                <option value="free">자유</option>
+                <option value="NOTICE">공지</option>
+                <option value="FREE">자유</option>
+                <option value="QNA">QnA</option>
+            </select>
+        </div>
+        <div class="row">
+            <select name="visibility">
+                <option value="PUBLIC">전체공개</option>
+                <option value="PRIVATE">나만보기</option>
             </select>
         </div>
         <div class="row">
@@ -43,61 +49,30 @@
 </main>
 
 <script>
-    // ===== 공통 유틸 =====
     const tokenKey = 'accessToken';
     const getToken = () => localStorage.getItem(tokenKey);
 
     async function api(path, {method='GET', headers={}, body, raw=false} = {}) {
         const h = {'Content-Type': 'application/json', ...headers};
-        const t = getToken();
-        if (t) h['Authorization'] = 'Bearer ' + t;
+        const t = getToken(); if (t) h['Authorization'] = 'Bearer ' + t;
         const res = await fetch(path, {method, headers: h, body});
-        if (res.status === 401) {
-            localStorage.removeItem(tokenKey);
-            alert('로그인이 필요합니다.');
-            location.href = '/login';
-            throw new Error('Unauthorized');
-        }
-        if (!res.ok) {
-            const msg = await res.text().catch(()=> '');
-            throw new Error(msg || ('HTTP '+res.status));
-        }
+        if (res.status === 401) { localStorage.removeItem(tokenKey); alert('로그인이 필요합니다.'); location.href = '/login'; throw new Error('Unauthorized'); }
+        if (!res.ok) { const msg = await res.text().catch(()=> ''); throw new Error(msg || ('HTTP '+res.status)); }
         return raw ? res : res.json();
     }
-
-    const escapeHtml = (s) => (s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-    const fmt = (iso) => iso ? new Date(iso).toLocaleString() : '';
 
     (function headerToggle(){
         const t = getToken();
         const auth = document.getElementById('authLinks');
         const newLink = document.getElementById('newLink');
-        if (t) {
-            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
-            if (newLink) newLink.href = '/board/new';
-        } else {
-            if (auth) auth.innerHTML = `<a href="/login">로그인</a>`;
-            if (newLink) newLink.href = '/login';
-        }
-        // 수정 페이지에선 "새 글" 버튼 숨김
+        if (t) { if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; if (newLink) newLink.href = '/board/new'; }
+        else { if (auth) auth.innerHTML = `<a href="/login">로그인</a>`; if (newLink) newLink.href = '/login'; }
         if (newLink) newLink.style.display = 'none';
-
-        document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'logoutBtn') {
-                e.preventDefault();
-                localStorage.removeItem(tokenKey);
-                location.reload();
-            }
-        });
+        document.addEventListener('click', (e) => { if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(tokenKey); location.reload(); } });
     })();
 
-    // 로그인 필요
-    if (!getToken()) {
-        alert('로그인이 필요합니다.');
-        location.href = '/login';
-    }
+    if (!getToken()) { alert('로그인이 필요합니다.'); location.href = '/login'; }
 
-    // ===== 로딩/저장 + 미저장 이탈 방지 =====
     const $ = (s)=>document.querySelector(s);
     const id = new URLSearchParams(location.search).get('id');
     const f = $('#f');
@@ -106,19 +81,17 @@
         const d = await api(`/api/board/${id}`);
         f.title.value = d.title || '';
         f.content.value = d.content || '';
-        f.category.value = d.category || '';
+        f.category.value = (d.category || '');
+        f.visibility.value = (d.visibility || 'PUBLIC');
     }
 
     window.__dirty = false;
     f.addEventListener('input', ()=> { window.__dirty = true; });
 
-    window.addEventListener('beforeunload', (evt) => {
-        if (window.__dirty) { evt.preventDefault(); evt.returnValue = ''; }
-    });
+    window.addEventListener('beforeunload', (evt) => { if (window.__dirty) { evt.preventDefault(); evt.returnValue = ''; } });
     document.addEventListener('click', (e)=>{
         if (!window.__dirty) return;
-        const a = e.target.closest('a');
-        if (!a) return;
+        const a = e.target.closest('a'); if (!a) return;
         if (a.target || a.href.startsWith('javascript:')) return;
         if (!confirm('변경 사항이 저장되지 않았습니다. 이동하시겠어요?')) e.preventDefault();
     });
@@ -129,7 +102,8 @@
         const payload = {
             title: (fd.get('title')||'').trim(),
             content: (fd.get('content')||'').trim(),
-            category: fd.get('category') || null
+            category: (fd.get('category') || '').trim() || null,
+            visibility: (fd.get('visibility') || 'PUBLIC').trim().toUpperCase()
         };
         await api(`/api/board/${id}`, {method:'PUT', body: JSON.stringify(payload)});
         window.__dirty = false;

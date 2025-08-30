@@ -11,10 +11,11 @@
         .meta { color:#6b7280; margin-bottom:12px; }
         .content { white-space: pre-wrap; border:1px solid #e5e7eb; border-radius:12px; padding:16px; }
         #actions a { margin-right: 12px; }
+        .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; margin-left:6px; }
+        .pill.private { border-color:#ef4444; color:#ef4444; }
     </style>
 </head>
 <body>
-<!-- 공통 네비 -->
 <nav class="nav">
     <a href="/">홈</a> |
     <a href="/board/list">게시판</a> |
@@ -33,73 +34,52 @@
 </main>
 
 <script>
-    // ===== 공통 유틸 =====
     const tokenKey = 'accessToken';
     const getToken = () => localStorage.getItem(tokenKey);
 
     async function api(path, {method='GET', headers={}, body, raw=false} = {}) {
         const h = {'Content-Type': 'application/json', ...headers};
-        const t = getToken();
-        if (t) h['Authorization'] = 'Bearer ' + t;
+        const t = getToken(); if (t) h['Authorization'] = 'Bearer ' + t;
         const res = await fetch(path, {method, headers: h, body});
-        if (res.status === 401) {
-            localStorage.removeItem(tokenKey);
-            alert('로그인이 만료되었어요. 다시 로그인해 주세요.');
-            location.href = '/login';
-            throw new Error('Unauthorized');
-        }
-        if (!res.ok) {
-            const msg = await res.text().catch(()=> '');
-            throw new Error(msg || ('HTTP '+res.status));
-        }
+        if (res.status === 401) { localStorage.removeItem(tokenKey); alert('로그인이 만료되었어요. 다시 로그인해 주세요.'); location.href = '/login'; throw new Error('Unauthorized'); }
+        if (!res.ok) { const msg = await res.text().catch(()=> ''); throw new Error(msg || ('HTTP '+res.status)); }
         return raw ? res : res.json();
     }
 
-    const escapeHtml = (s) => (s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
     const fmt = (iso) => iso ? new Date(iso).toLocaleString() : '';
 
     (function headerToggle(){
         const t = getToken();
         const auth = document.getElementById('authLinks');
         const newLink = document.getElementById('newLink');
-        if (t) {
-            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
-            if (newLink) newLink.href = '/board/new';
-        } else {
-            if (auth) auth.innerHTML = `<a href="/login">로그인</a>`;
-            if (newLink) newLink.href = '/login';
-        }
+        if (t) { if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; if (newLink) newLink.href = '/board/new'; }
+        else { if (auth) auth.innerHTML = `<a href="/login">로그인</a>`; if (newLink) newLink.href = '/login'; }
         document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'logoutBtn') {
-                e.preventDefault();
-                localStorage.removeItem(tokenKey);
-                location.reload();
-            }
+            if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(tokenKey); location.reload(); }
         });
     })();
 
-    // ===== 상세 로직 =====
     const $ = (s)=>document.querySelector(s);
     const id = new URLSearchParams(location.search).get('id');
 
     async function loadDetail(){
         const data = await api(`/api/board/${id}`);
-        $('#title').textContent = data.title || '';
-        $('#author').textContent = (data.authorNickname ?? data.author?.nickname ?? '') || '';
-        $('#meta').textContent = ` | 분류: ${data.category ?? ''} | 조회수: ${data.viewCount ?? 0} | 작성: ${fmt(data.createdAt)}`;
-        $('#content').textContent = data.content || '';
+        document.getElementById('title').textContent = data.title || '';
+        document.getElementById('author').textContent = (data.authorNickname ?? data.author?.nickname ?? '') || '';
+        const category = data.category ?? '';
+        const vis = String(data.visibility || 'PUBLIC').toUpperCase();
+        const visTxt = vis === 'PRIVATE' ? '나만보기' : '전체공개';
+        document.getElementById('meta').innerHTML =
+            ` | 분류: ${category} | 공개: <span class="pill ${vis==='PRIVATE'?'private':''}">${visTxt}</span> | 조회수: ${data.viewCount ?? 0} | 작성: ${fmt(data.createdAt)}`;
+        document.getElementById('content').textContent = data.content || '';
 
-        // 작성자 본인일 때만 수정/삭제 노출 (me API가 없어도 동작은 함: 버튼 미노출)
         let meId = null;
-        try {
-            const me = await api('/api/auth/me');
-            meId = me?.id ?? null;
-        } catch { /* ignore */ }
+        try { const me = await api('/api/auth/me'); meId = me?.id ?? null; } catch {}
 
         const isOwner = meId && data.authorId && String(meId) === String(data.authorId);
-        const actions = $('#actions');
+        const actions = document.getElementById('actions');
         actions.innerHTML = '';
-        if (getToken()) {
+        if (getToken() && isOwner) {
             const edit = document.createElement('a');
             edit.href = `/board/edit?id=${encodeURIComponent(id)}`;
             edit.textContent = '수정';

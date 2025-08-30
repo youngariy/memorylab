@@ -15,7 +15,6 @@
     </style>
 </head>
 <body>
-<!-- 공통 네비 -->
 <nav class="nav">
     <a href="/">홈</a> |
     <a href="/board/list">게시판</a> |
@@ -36,9 +35,17 @@
             <label for="category">분류</label>
             <select id="category" name="category">
                 <option value="">분류 없음</option>
-                <option value="notice">공지</option>
-                <option value="free">자유</option>
-                <option value="question">질문</option>
+                <option value="NOTICE">공지</option>
+                <option value="FREE">자유</option>
+                <option value="QNA">QnA</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label for="visibility">공개 범위</label>
+            <select id="visibility" name="visibility">
+                <option value="PUBLIC">전체공개</option>
+                <option value="PRIVATE">나만보기</option>
             </select>
         </div>
 
@@ -55,136 +62,61 @@
 </main>
 
 <script>
-    // ===== 토큰/공통 API =====
     const tokenKey = 'accessToken';
     const getToken = () => localStorage.getItem(tokenKey);
 
     async function api(path, { method='GET', headers={}, body } = {}) {
         const h = { ...headers };
         if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json';
-
-        const t = getToken();
-        if (t) h['Authorization'] = 'Bearer ' + t;
-
+        const t = getToken(); if (t) h['Authorization'] = 'Bearer ' + t;
         const res = await fetch(path, { method, headers: h, body });
-
-        if (res.status === 401) {
-            localStorage.removeItem(tokenKey);
-            alert('로그인이 필요합니다.');
-            location.href = '/login';
-            throw new Error('401 Unauthorized');
-        }
-
-        if (!res.ok) {
-            let msg = `${res.status} ${res.statusText}`;
-            try {
-                const ct = res.headers.get('content-type') || '';
-                if (ct.includes('application/json')) {
-                    const j = await res.json();
-                    if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`;
-                } else {
-                    const t = await res.text();
-                    if (t) msg += `: ${t}`;
-                }
-            } catch {}
-            throw new Error(msg);
-        }
-
+        if (res.status === 401) { localStorage.removeItem(tokenKey); alert('로그인이 필요합니다.'); location.href = '/login'; throw new Error('401 Unauthorized'); }
+        if (!res.ok) { let msg = `${res.status} ${res.statusText}`; try{ const ct=res.headers.get('content-type')||''; if(ct.includes('application/json')){const j=await res.json(); if(j&&(j.message||j.error)) msg+=`: ${j.message||j.error}`;} else { const t=await res.text(); if(t) msg+=`: ${t}`; } }catch{} throw new Error(msg); }
         const ct = res.headers.get('content-type') || '';
         return ct.includes('application/json') ? res.json() : null;
     }
 
-    // ===== 네비 토글(IIFE) =====
     (function headerToggle(){
         const t = getToken();
         const auth = document.getElementById('authLinks');
         const newLink = document.getElementById('newLink');
-
-        if (t) {
-            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
-            if (newLink) newLink.href = '/board/new';
-        } else {
-            if (auth) auth.innerHTML = `<a href="/login">로그인</a> | <a href="/signup">회원가입</a>`;
-            if (newLink) newLink.href = '/login';
-        }
-        // 새 글 페이지에서는 "새 글" 링크 감춤(중복 진입 방지)
+        if (t) { if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; if (newLink) newLink.href = '/board/new'; }
+        else { if (auth) auth.innerHTML = `<a href="/login">로그인</a> | <a href="/signup">회원가입</a>`; if (newLink) newLink.href = '/login'; }
         if (newLink) newLink.style.display = 'none';
-
-        document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'logoutBtn') {
-                e.preventDefault();
-                localStorage.removeItem(tokenKey);
-                location.href = '/';
-            }
-        });
+        document.addEventListener('click', (e) => { if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(tokenKey); location.href = '/'; } });
     })();
 
-    // ===== 비로그인 차단(이후 코드 진행 중지) =====
-    if (!getToken()) {
-        // 위 headerToggle에서 링크도 바꿔주지만, 직접 접근 시 바로 보냄
-        alert('로그인이 필요합니다.');
-        location.href = '/login';
-        // 아래 코드 실행하지 않도록 return
-    }
+    if (!getToken()) { alert('로그인이 필요합니다.'); location.href = '/login'; }
 
-    // ===== 작성/저장 로직 + 미저장 이탈 방지 =====
     const f = document.getElementById('f');
     const submitBtn = document.getElementById('submitBtn');
-
     let dirty = false;
     f.addEventListener('input', () => { dirty = true; });
-
-    window.addEventListener('beforeunload', (evt) => {
-        if (dirty) { evt.preventDefault(); evt.returnValue = ''; }
-    });
-
+    window.addEventListener('beforeunload', (evt) => { if (dirty) { evt.preventDefault(); evt.returnValue = ''; } });
     document.addEventListener('click', (e) => {
         if (!dirty) return;
-        const a = e.target.closest('a');
-        if (!a) return;
+        const a = e.target.closest('a'); if (!a) return;
         if (a.target || (a.getAttribute('href') || '').startsWith('javascript:')) return;
         if (!confirm('변경 사항이 저장되지 않았습니다. 이동하시겠어요?')) e.preventDefault();
     });
 
     f.addEventListener('submit', async (e) => {
         e.preventDefault();
-
-        // 기본 검증
         const fd = new FormData(f);
         const payload = {
             title: (fd.get('title') || '').trim(),
             content: (fd.get('content') || '').trim(),
-            category: (fd.get('category') || '').trim() || null
+            category: (fd.get('category') || '').trim() || null,
+            visibility: (fd.get('visibility') || 'PUBLIC').trim().toUpperCase()
         };
-        if (!payload.title || !payload.content) {
-            alert('제목과 내용을 입력하세요.');
-            return;
-        }
-
-        // 중복 제출 방지
+        if (!payload.title || !payload.content) { alert('제목과 내용을 입력하세요.'); return; }
         if (submitBtn) submitBtn.disabled = true;
-
         try {
-            const out = await api('/api/board', {
-                method: 'POST',
-                body: JSON.stringify(payload)
-            });
-
-            dirty = false;
-            alert('등록되었습니다.');
-
-            const newId = out?.id;
-            if (newId != null) {
-                location.href = '/board/view?id=' + encodeURIComponent(newId);
-            } else {
-                location.href = '/board/list';
-            }
-        } catch (err) {
-            console.error(err);
-            alert('등록 실패: ' + (err?.message || err));
-        } finally {
-            if (submitBtn) submitBtn.disabled = false;
-        }
+            const out = await api('/api/board', { method: 'POST', body: JSON.stringify(payload) });
+            dirty = false; alert('등록되었습니다.');
+            const newId = out?.id; location.href = newId != null ? '/board/view?id=' + encodeURIComponent(newId) : '/board/list';
+        } catch (err) { console.error(err); alert('등록 실패: ' + (err?.message || err)); }
+        finally { if (submitBtn) submitBtn.disabled = false; }
     });
 </script>
 </body>

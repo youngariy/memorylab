@@ -17,6 +17,7 @@
         .btn-primary { background:#111; color:#fff; border-color:#111; }
         .btn[disabled] { opacity: .5; cursor: not-allowed; }
         .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; }
+        .pill.private { border-color:#ef4444; color:#ef4444; }
         .pager { display:flex; gap:6px; align-items:center; flex-wrap: wrap; margin-top: 12px; }
         .page { padding:4px 10px; border:1px solid #ccc; border-radius:6px; text-decoration:none; }
         .page.active { background:#111; color:#fff; border-color:#111; pointer-events:none; }
@@ -42,9 +43,9 @@
         <input type="text" id="q" name="q" placeholder="제목 검색" />
         <select id="category" name="category">
             <option value="">전체 카테고리</option>
-            <option value="공지">공지</option>
-            <option value="자유">자유</option>
-            <option value="QnA">QnA</option>
+            <option value="NOTICE">공지</option>
+            <option value="FREE">자유</option>
+            <option value="QNA">QnA</option>
         </select>
         <button type="submit" class="btn">검색</button>
     </form>
@@ -71,7 +72,6 @@
 <div class="pager" id="pager"></div>
 
 <script>
-    // ====== 공통: 로그인 상태/네비 토글 ======
     const TOKEN_KEY = 'accessToken';
     const token = localStorage.getItem(TOKEN_KEY);
 
@@ -96,7 +96,6 @@
         }
     });
 
-    // ====== 유틸 ======
     function escapeHtml(str) {
         if (str == null) return '';
         return String(str)
@@ -107,10 +106,7 @@
             .replaceAll("'",'&#39;');
     }
 
-    function fmtDate(iso) {
-        try { return new Date(iso).toLocaleString('ko-KR'); }
-        catch { return iso || ''; }
-    }
+    function fmtDate(iso) { try { return new Date(iso).toLocaleString('ko-KR'); } catch { return iso || ''; } }
 
     function getQs() {
         const p = new URLSearchParams(location.search);
@@ -128,12 +124,11 @@
         document.getElementById('category').value = qs.category;
     }
 
-    // ====== 목록 로드 ======
     async function loadList() {
         const { q, category, page, size } = getQs();
         const url = new URL('/api/board', location.origin);
         if (q)        url.searchParams.set('q', q);
-        if (category) url.searchParams.set('category', category);
+        if (category) url.searchParams.set('category', category); // Enum 값 그대로 전달
         url.searchParams.set('page', page);
         url.searchParams.set('size', size);
 
@@ -148,7 +143,6 @@
             if (!res.ok) throw new Error('목록 조회 실패(' + res.status + ')');
             const data = await res.json();
 
-            // 예상 구조: { content: [], totalPages, totalElements, number, size }
             const items = Array.isArray(data.content) ? data.content : [];
             if (items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="meta">게시글이 없습니다.</td></tr>`;
@@ -157,6 +151,7 @@
                     const id = it.id;
                     const title = escapeHtml(it.title);
                     const category = escapeHtml(it.category || '');
+                    const vis = String(it.visibility || '').toUpperCase();
                     const author = escapeHtml(it.authorNickname || '익명');
                     const views = (typeof it.viewCount === 'number') ? it.viewCount : (it.viewCount || 0);
                     const createdAt = fmtDate(it.createdAt);
@@ -167,6 +162,7 @@
               <td>
                 <a href="/board/view?id=${encodeURIComponent(id)}">${title}</a>
                 ${category ? ` <span class="pill">${category}</span>` : ''}
+                ${vis === 'PRIVATE' ? ` <span class="pill private">나만보기</span>` : ''}
               </td>
               <td>${category || '-'}</td>
               <td>${author}</td>
@@ -177,7 +173,6 @@
                 }).join('');
             }
 
-            // 페이지네이션
             const totalPages = Math.max(1, parseInt(data.totalPages ?? 1, 10) || 1);
             const cur = Math.min(Math.max(0, parseInt(data.number ?? page, 10) || 0), totalPages - 1);
 
@@ -189,9 +184,7 @@
             };
 
             const prev = document.createElement('a');
-            prev.className = 'page';
-            prev.textContent = '이전';
-            prev.href = linkTo(Math.max(0, cur - 1));
+            prev.className = 'page'; prev.textContent = '이전'; prev.href = linkTo(Math.max(0, cur - 1));
             if (cur === 0) prev.setAttribute('disabled', 'true');
             pager.appendChild(prev);
 
@@ -207,9 +200,7 @@
             }
 
             const next = document.createElement('a');
-            next.className = 'page';
-            next.textContent = '다음';
-            next.href = linkTo(Math.min(totalPages - 1, cur + 1));
+            next.className = 'page'; next.textContent = '다음'; next.href = linkTo(Math.min(totalPages - 1, cur + 1));
             if (cur >= totalPages - 1) next.setAttribute('disabled', 'true');
             pager.appendChild(next);
 
@@ -220,7 +211,6 @@
         }
     }
 
-    // ====== 검색 폼 ======
     document.getElementById('searchForm').addEventListener('submit', (e) => {
         e.preventDefault();
         const q = document.getElementById('q').value.trim();
@@ -232,15 +222,9 @@
         location.search = '?' + params.toString();
     });
 
-    // 초기화
     setFormFromQs();
     loadList();
-
-    // 뒤/앞으로 가기 시 갱신
-    window.addEventListener('popstate', () => {
-        setFormFromQs();
-        loadList();
-    });
+    window.addEventListener('popstate', () => { setFormFromQs(); loadList(); });
 </script>
 
 </body>
