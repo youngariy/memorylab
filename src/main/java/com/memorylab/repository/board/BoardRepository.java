@@ -18,7 +18,7 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
         AND (:category IS NULL OR b.category = :category)
         AND (
             b.visibility = com.memorylab.domain.board.Visibility.PUBLIC OR
-            (b.visibility = com.memorylab.domain.board.Visibility.PRIVATE AND b.author.id = :meId)
+            (:meId IS NOT NULL AND b.author.id = :meId AND b.visibility = com.memorylab.domain.board.Visibility.PRIVATE)
         )
     """)
     Page<Board> search(
@@ -27,6 +27,7 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
             @Param("meId") Long meId,
             Pageable pageable
     );
+
 
     Optional<Board> findById(Long id);
 }

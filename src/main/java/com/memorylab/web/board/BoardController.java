@@ -31,7 +31,7 @@ public class BoardController {
     /** 글 생성 */
     @PostMapping
     public ResponseEntity<?> create(
-            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long userId,
+            @AuthenticationPrincipal Long userId,
             @RequestBody @Valid CreateReq req
     ) {
         Long id = board.create(requireUserId(userId), req);
@@ -45,7 +45,7 @@ public class BoardController {
             @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long meId
+            @AuthenticationPrincipal Long meId
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("id")));
         return ResponseEntity.ok(board.list(q, category, meId, pageable));
@@ -56,7 +56,7 @@ public class BoardController {
     public ResponseEntity<DetailRes> detail(
             @PathVariable Long id,
             @RequestParam(defaultValue = "true") boolean increaseView,
-            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long meId
+            @AuthenticationPrincipal Long meId
     ) {
         return ResponseEntity.ok(board.read(id, meId, increaseView));
     }
@@ -65,7 +65,7 @@ public class BoardController {
     @PutMapping("/{id}")
     public ResponseEntity<?> update(
             @PathVariable Long id,
-            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long userId,
+            @AuthenticationPrincipal Long userId,
             @RequestBody @Valid UpdateReq req
     ) {
         board.update(id, requireUserId(userId), req);
@@ -76,7 +76,7 @@ public class BoardController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(
             @PathVariable Long id,
-            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long userId
+            @AuthenticationPrincipal Long userId
     ) {
         board.delete(id, requireUserId(userId));
         return ResponseEntity.ok().build();
