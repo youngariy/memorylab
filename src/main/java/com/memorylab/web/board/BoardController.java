@@ -45,7 +45,7 @@ public class BoardController {
             @RequestParam(required = false) String category,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long meId // nullable OK
+            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long meId
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("id")));
         return ResponseEntity.ok(board.list(q, category, meId, pageable));
@@ -56,7 +56,7 @@ public class BoardController {
     public ResponseEntity<DetailRes> detail(
             @PathVariable Long id,
             @RequestParam(defaultValue = "true") boolean increaseView,
-            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long meId // nullable OK
+            @AuthenticationPrincipal(expression = "id", errorOnInvalidType = false) Long meId
     ) {
         return ResponseEntity.ok(board.read(id, meId, increaseView));
     }
