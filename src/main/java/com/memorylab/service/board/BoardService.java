@@ -43,10 +43,10 @@ public class BoardService {
 
     @Transactional(readOnly = true)
     public Page<SummaryRes> list(String q, String category, Long meId, Pageable pageable){
-        // 카테고리를 아직 String으로 쓰는 경우 ↓ 이 줄을 그대로 String 유지하세요.
         Category cat = Category.parse(category);
 
-        Page<Board> page = boards.searchVisible(q, cat, meId, pageable);
+        // ✅ searchVisible -> search 로 변경
+        Page<Board> page = boards.search(q, cat, meId, pageable);
 
         return page.map(b -> new SummaryRes(
                 b.getId(),
