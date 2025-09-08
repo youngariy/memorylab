@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <title>내 정보</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <style>
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
+        nav { margin-bottom: 16px; }
+        nav a { margin-right: 8px; }
+        .card { border:1px solid #e5e7eb; border-radius: 12px; padding: 16px; max-width: 720px; }
+        .row  { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 6px 0; border-bottom: 1px solid #f3f4f6; }
+        .row:last-child { border-bottom: 0; }
+        .label { color:#6b7280; }
+        .meta { color:#6b7280; font-size:12px; margin-top:8px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
+        th { background: #fafafa; }
+        .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; }
+        .pill.private { border-color:#ef4444; color:#ef4444; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <a href="/">홈</a> |
+    <a href="/board/list">게시판</a> |
+    <span id="authLinks"></span>
+</nav>
+
+<main>
+    <h1>내 정보</h1>
+    <div id="status" class="meta">불러오는 중...</div>
+
+    <section id="profileCard" class="card" style="display:none;">
+        <div class="row"><div class="label">닉네임</div><div id="f-nickname">-</div></div>
+        <div class="row"><div class="label">이름</div><div id="f-name">-</div></div>
+        <div class="row"><div class="label">이메일</div><div id="f-email">-</div></div>
+        <div class="row"><div class="label">가입일</div><div id="f-createdAt">-</div></div>
+    </section>
+
+    <h2 style="margin-top:20px;">내가 쓴 글</h2>
+    <div id="postsWrap" class="card" style="display:none;">
+        <table>
+            <thead>
+            <tr>
+                <th style="width:72px;">번호</th>
+                <th>제목</th>
+                <th style="width:120px;">카테고리</th>
+                <th style="width:90px;">조회</th>
+                <th style="width:180px;">작성일</th>
+            </tr>
+            </thead>
+            <tbody id="postsBody"><tr><td colspan="5" class="meta">불러오는 중...</td></tr></tbody>
+        </table>
+        <div id="postsPager" class="meta"></div>
+    </div>
+</main>
+
+<script>
+    // === 공통(다른 페이지와 동일) ===
+    const tokenKey = 'accessToken';
+    const getToken = () => localStorage.getItem(tokenKey);
+    const parseJwt = (t) => { try { return JSON.parse(atob(t.split('.')[1])); } catch { return {}; } };
+    const fmt = (iso) => iso ? new Date(iso).toLocaleString('ko-KR') : '-';
+    const escapeHtml = (s)=> (s==null?'':String(s)
+        .replaceAll('&','&amp;').replaceAll('<','&lt;')
+        .replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'));
+
+    async function api(path, { method='GET', headers={}, body, expect='json' } = {}) {
+        const h = new Headers(headers);
+        if (body && !(body instanceof FormData) && !h.has('Content-Type')) h.set('Content-Type','application/json');
+        const t = getToken(); if (t) h.set('Authorization','Bearer '+t);
+        const res = await fetch(path, { method, headers:h, body });
+        if (res.status === 401) { localStorage.removeItem(tokenKey); alert('로그인이 필요합니다.'); location.href='/login'; throw new Error('Unauthorized'); }
+        if (!res.ok) { const msg = await res.text().catch(()=> ''); throw new Error(msg || ('HTTP '+res.status)); }
+        if (res.status === 204) return null;
+        const ct = res.headers.get('content-type')||''; const txt = await res.text();
+        if (!txt) return null; if (expect==='json' && ct.includes('application/json')) { try { return JSON.parse(txt); } catch { return null; } }
+        return txt;
+    }
+
+    // 헤더 (로그인 상태 표기만, "새 글" 버튼 없음)
+    (function headerToggle(){
+        const t = getToken();
+        const auth = document.getElementById('authLinks');
+        if (t) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtnTop">로그아웃</a>`;
+        else   auth.innerHTML = `<a href="/login">로그인</a>`;
+        document.addEventListener('click', (e)=>{
+            if (e.target && e.target.id==='logoutBtnTop') { e.preventDefault(); localStorage.removeItem(tokenKey); location.href='/'; }
+        });
+    })();
+
+    if (!getToken()) { alert('로그인이 필요합니다.'); location.href='/login'; }
+
+    // ===== 프로필 로드 =====
+    let myId = null;
+
+    async function loadProfile() {
+        const status = document.getElementById('status');
+        const card   = document.getElementById('profileCard');
+
+        try {
+            let me;
+            try {
+                // 1순위: 서버
+                me = await api('/api/auth/me');
+            } catch (e) {
+                // 2순위: JWT
+                const t = getToken(), p = t ? parseJwt(t) : {};
+                if (!t || !p) throw e;
+                me = {
+                    id: p.uid ?? null,
+                    email: p.sub ?? p.email ?? null,
+                    nickname: p.nickname ?? p.name ?? null,
+                    name: p.name ?? null,
+                    createdAt: null
+                };
+            }
+
+            myId = me.id ?? null;
+
+            document.getElementById('f-nickname').textContent = me.nickname ?? '-';
+            document.getElementById('f-name').textContent     = me.name ?? '-';
+            document.getElementById('f-email').textContent    = me.email ?? '-';
+            document.getElementById('f-createdAt').textContent= fmt(me.createdAt);
+
+            status.textContent = '완료';
+            card.style.display = '';
+        } catch (err) {
+            status.textContent = '오류: ' + (err?.message || err);
+            console.error(err);
+        }
+    }
+
+    // ===== 내 글 로드 (페이지네이션 간단) =====
+    async function loadMyPosts(page=0, size=10) {
+        const wrap  = document.getElementById('postsWrap');
+        const body  = document.getElementById('postsBody');
+        const pager = document.getElementById('postsPager');
+        body.innerHTML = `<tr><td colspan="5" class="meta">불러오는 중...</td></tr>`;
+        pager.textContent = '';
+
+        if (!myId) { wrap.style.display='none'; return; }
+
+        try {
+            // 옵션 A) 백엔드가 authorId 필터를 지원하는 경우 (권장)
+            //   GET /api/board?authorId=<myId>&page=...&size=...
+            // 옵션 B) mine 전용 엔드포인트가 있는 경우:
+            //   GET /api/board/mine?page=...&size=...
+            // 아래는 A 방식을 기본으로 사용:
+            const url = new URL('/api/board', location.origin);
+            url.searchParams.set('authorId', myId);
+            url.searchParams.set('page', page);
+            url.searchParams.set('size', size);
+
+            const data = await api(url.toString());
+            const items = Array.isArray(data.content) ? data.content : [];
+
+            // 번호 계산 (리스트와 동일한 방식)
+            const total    = parseInt(data.totalElements ?? 0, 10) || 0;
+            const curPage  = parseInt(data.number ?? page, 10) || 0;
+            const pageSize = parseInt(data.size ?? size, 10)   || size;
+            const pageStartNo = total ? (total - (curPage * pageSize)) : (curPage * pageSize + 1);
+
+            if (items.length === 0) {
+                body.innerHTML = `<tr><td colspan="5" class="meta">작성한 게시글이 없습니다.</td></tr>`;
+            } else {
+                body.innerHTML = items.map((it, idx) => {
+                    const rowNo     = total ? (pageStartNo - idx) : (curPage * pageSize + idx + 1);
+                    const id        = it.id;
+                    const title     = escapeHtml(it.title);
+                    const category  = escapeHtml(it.category || '');
+                    const vis       = String(it.visibility || '').toUpperCase();
+                    const views     = (typeof it.viewCount === 'number') ? it.viewCount : (it.viewCount || 0);
+                    const createdAt = it.createdAt ? new Date(it.createdAt).toLocaleString('ko-KR') : '-';
+                    return `
+            <tr>
+              <td>${rowNo}</td>
+              <td>
+                <a href="/board/view?id=${encodeURIComponent(id)}">${title}</a>
+                ${category ? ` <span class="pill">${category}</span>` : ''}
+                ${vis === 'PRIVATE' ? ` <span class="pill private">나만보기</span>` : ''}
+              </td>
+              <td>${category || '-'}</td>
+              <td>${views}</td>
+              <td>${createdAt}</td>
+            </tr>`;
+                }).join('');
+            }
+
+            // 간단한 페이지 정보
+            const totalPages = Math.max(1, parseInt(data.totalPages ?? 1, 10) || 1);
+            pager.textContent = `페이지 ${ (curPage+1) } / ${ totalPages } (총 ${ total }건)`;
+            wrap.style.display = '';
+
+        } catch (err) {
+            body.innerHTML = `<tr><td colspan="5" class="meta">오류: ${escapeHtml(err.message || err)}</td></tr>`;
+            console.error(err);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', async ()=>{
+        await loadProfile();
+        await loadMyPosts(0, 10);
+    });
+</script>
+
+</body>
+</html>

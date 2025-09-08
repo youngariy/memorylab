@@ -1,3 +1,4 @@
+// src/main/java/com/memorylab/service/board/BoardService.java
 package com.memorylab.service.board;
 
 import com.memorylab.domain.board.Board;
@@ -33,7 +34,6 @@ public class BoardService {
                 .author(author)
                 .title(nz(req.title()))
                 .content(nz(req.content()))
-                // 카테고리를 아직 String으로 쓰는 경우 ↓ 이 줄을 .category(req.category()) 로 바꾸세요.
                 .category(Category.parse(req.category()))
                 .visibility(Visibility.parse(req.visibility()))
                 .build();
@@ -42,18 +42,14 @@ public class BoardService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SummaryRes> list(String q, String category, Long meId, Pageable pageable){
+    public Page<SummaryRes> list(String q, String category, Long authorId, Long meId, Pageable pageable){
         Category cat = Category.parse(category);
-
-        // ✅ searchVisible -> search 로 변경
-        Page<Board> page = boards.search(q, cat, meId, pageable);
+        Page<Board> page = boards.search(q, cat, authorId, meId, pageable);
 
         return page.map(b -> new SummaryRes(
                 b.getId(),
                 b.getTitle(),
-                // 카테고리를 아직 String으로 쓰는 경우 ↓ b.getCategory() 로 교체
                 b.getCategory() == null ? null : b.getCategory().name(),
-                // DTO에 visibility가 추가되어 있으므로 함께 내려줍니다
                 b.getVisibility() == null ? Visibility.PUBLIC.name() : b.getVisibility().name(),
                 b.getViewCount(),
                 b.getCreatedAt(),
@@ -78,7 +74,6 @@ public class BoardService {
                 b.getId(),
                 b.getTitle(),
                 b.getContent(),
-                // 카테고리를 아직 String으로 쓰는 경우 ↓ b.getCategory()
                 b.getCategory() == null ? null : b.getCategory().name(),
                 b.getVisibility() == null ? Visibility.PUBLIC.name() : b.getVisibility().name(),
                 b.getViewCount(),
@@ -94,18 +89,12 @@ public class BoardService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글 없음"));
         if (!b.isAuthor(userId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "수정 권한 없음");
 
-        // 엔티티가 Enum이면:
         b.modify(
                 nz(req.title()),
                 nz(req.content()),
-                // 카테고리를 아직 String으로 쓰는 경우 ↓ req.category()
                 Category.parse(req.category()),
                 Visibility.parse(req.visibility())
         );
-
-        // 엔티티가 아직 String category 라면 위 대신:
-        // b.modify(nz(req.title()), nz(req.content()), req.category());
-        // b.setVisibility(Visibility.parse(req.visibility()));
     }
 
     public void delete(Long id, Long userId){

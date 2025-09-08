@@ -36,34 +36,64 @@
 <script>
     const tokenKey = 'accessToken';
     const getToken = () => localStorage.getItem(tokenKey);
+    const parseJwt = (t) => { try { return JSON.parse(atob(t.split('.')[1])); } catch { return {}; } };
 
-    async function api(path, {method='GET', headers={}, body, raw=false} = {}) {
-        const h = {'Content-Type': 'application/json', ...headers};
-        const t = getToken(); if (t) h['Authorization'] = 'Bearer ' + t;
-        const res = await fetch(path, {method, headers: h, body});
-        if (res.status === 401) { localStorage.removeItem(tokenKey); alert('로그인이 만료되었어요. 다시 로그인해 주세요.'); location.href = '/login'; throw new Error('Unauthorized'); }
-        if (!res.ok) { const msg = await res.text().catch(()=> ''); throw new Error(msg || ('HTTP '+res.status)); }
-        return raw ? res : res.json();
+    // ✅ 204/빈 본문 안전한 공통 API
+    async function api(path, { method='GET', headers={}, body, expect='json' } = {}) {
+        const h = new Headers(headers);
+        if (body && !(body instanceof FormData) && !h.has('Content-Type')) {
+            h.set('Content-Type', 'application/json');
+        }
+        const t = getToken(); if (t) h.set('Authorization', 'Bearer ' + t);
+        const res = await fetch(path, { method, headers:h, body });
+
+        if (res.status === 401) {
+            localStorage.removeItem(tokenKey);
+            alert('로그인이 만료되었어요. 다시 로그인해 주세요.');
+            location.href = '/login';
+            throw new Error('Unauthorized');
+        }
+        if (!res.ok) {
+            const msg = await res.text().catch(()=> '');
+            throw new Error(msg || ('HTTP ' + res.status));
+        }
+        if (res.status === 204) return null;
+        const ct  = res.headers.get('content-type') || '';
+        const txt = await res.text();
+        if (!txt) return null;
+        if (expect === 'json' && ct.includes('application/json')) {
+            try { return JSON.parse(txt); } catch { return null; }
+        }
+        return txt;
     }
 
-    const fmt = (iso) => iso ? new Date(iso).toLocaleString() : '';
-
+    // 헤더 토글 (✅ 로그인 시 새 글 보이도록)
     (function headerToggle(){
         const t = getToken();
         const auth = document.getElementById('authLinks');
         const newLink = document.getElementById('newLink');
-        if (t) { if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; if (newLink) newLink.href = '/board/new'; }
-        else { if (auth) auth.innerHTML = `<a href="/login">로그인</a>`; if (newLink) newLink.href = '/login'; }
+        if (t) {
+            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
+            if (newLink) { newLink.href = '/board/new'; newLink.style.display = ''; }
+        } else {
+            if (auth) auth.innerHTML = `<a href="/login">로그인</a>`;
+            if (newLink) { newLink.href = '/login'; newLink.style.display = 'none'; }
+        }
         document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(tokenKey); location.reload(); }
+            if (e.target && e.target.id === 'logoutBtn') {
+                e.preventDefault(); localStorage.removeItem(tokenKey); location.reload();
+            }
         });
     })();
 
     const $ = (s)=>document.querySelector(s);
     const id = new URLSearchParams(location.search).get('id');
+    const fmt = (iso) => iso ? new Date(iso).toLocaleString() : '';
 
     async function loadDetail(){
         const data = await api(`/api/board/${id}`);
+
+        // 화면 세팅
         document.getElementById('title').textContent = data.title || '';
         document.getElementById('author').textContent = (data.authorNickname ?? data.author?.nickname ?? '') || '';
         const category = data.category ?? '';
@@ -73,13 +103,35 @@
             ` | 분류: ${category} | 공개: <span class="pill ${vis==='PRIVATE'?'private':''}">${visTxt}</span> | 조회수: ${data.viewCount ?? 0} | 작성: ${fmt(data.createdAt)}`;
         document.getElementById('content').textContent = data.content || '';
 
-        let meId = null;
-        try { const me = await api('/api/auth/me'); meId = me?.id ?? null; } catch {}
+        // 내 사용자 ID: /api/auth/me → 실패 시 JWT uid로 백업
+        let meId = null, roles = [];
+        try {
+            const me = await api('/api/auth/me');
+            meId  = me?.id ?? null;
+            roles = me?.roles ?? [];
+        } catch {
+            const t = getToken();
+            if (t) {
+                const payload = parseJwt(t);
+                meId  = payload?.uid ?? null;
+                roles = payload?.roles ?? [];
+            }
+        }
 
-        const isOwner = meId && data.authorId && String(meId) === String(data.authorId);
+        // 작성자 ID 후보키들
+        const authorId = data.authorId ?? data.userId ?? data.writerId ?? data.author?.id ?? null;
+
+        // 서버가 내려주면 우선
+        const canEditFlag = data.canEdit === true;
+        const canDeleteFlag = data.canDelete === true;
+
+        const isOwner = !!meId && !!authorId && String(meId) === String(authorId);
+        const isAdmin = Array.isArray(roles) && roles.includes('ADMIN');
+
         const actions = document.getElementById('actions');
         actions.innerHTML = '';
-        if (getToken() && isOwner) {
+
+        if (getToken() && (canEditFlag || isOwner || isAdmin)) {
             const edit = document.createElement('a');
             edit.href = `/board/edit?id=${encodeURIComponent(id)}`;
             edit.textContent = '수정';
@@ -90,16 +142,16 @@
             del.addEventListener('click', async (e)=>{
                 e.preventDefault();
                 if (!confirm('삭제하시겠어요?')) return;
-                await api(`/api/board/${id}`, {method:'DELETE'});
+                await api(`/api/board/${id}`, { method:'DELETE' });
                 alert('삭제되었습니다.');
-                location.href = '/board/list';
+                setTimeout(()=>{ location.href = '/board/list'; }, 0);
             });
 
             actions.append(edit, del);
         }
     }
 
-    loadDetail();
+    document.addEventListener('DOMContentLoaded', loadDetail);
 </script>
 </body>
 </html>

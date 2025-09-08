@@ -3,5 +3,4 @@ package com.memorylab.repository.board.projection;
 
 public interface AuthorProj {
     Long getId();
-    String getNickname();
 }

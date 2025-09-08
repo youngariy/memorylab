@@ -7,8 +7,6 @@ public interface BoardSummaryProj {
     Long getId();
     String getTitle();
     String getCategory();
-    long getViewCount();
-    LocalDateTime getCreatedAt();
 
     AuthorProj getAuthor(); // 중첩 프로젝션
 }

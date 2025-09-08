@@ -2,7 +2,9 @@ package com.memorylab.dto.auth;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 public class AuthDtos {
 
@@ -18,5 +20,18 @@ public class AuthDtos {
     public static class LoginReq {
         @Email @NotBlank private String email;
         @NotBlank private String password;
+    }
+
+    @Getter @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    @Builder
+    public static class ProfileRes {
+        private Long id;
+        private String email;
+        private String nickname;
+        private String name;
+        private boolean emailVerified;     
+        private LocalDateTime createdAt;
     }
 }

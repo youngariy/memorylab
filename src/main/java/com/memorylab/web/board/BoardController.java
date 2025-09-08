@@ -15,6 +15,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+
 @RestController
 @RequestMapping("/api/board")
 @RequiredArgsConstructor
@@ -43,12 +44,13 @@ public class BoardController {
     public ResponseEntity<Page<SummaryRes>> list(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String category,
+            @RequestParam(required = false) Long authorId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @AuthenticationPrincipal Long meId
     ) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Order.desc("id")));
-        return ResponseEntity.ok(board.list(q, category, meId, pageable));
+        return ResponseEntity.ok(board.list(q, category, authorId, meId, pageable));
     }
 
     /** 상세: 가시성 체크 + (기본) 조회수 증가 */

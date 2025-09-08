@@ -15,13 +15,13 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
+import org.springframework.web.cors.*;
 
-// (선택) JWT 필터가 있다면 주입하세요.
-// import com.memorylab.security.JwtAuthenticationFilter;
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
-@EnableMethodSecurity // 선택
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -33,32 +33,33 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // 정적 리소스(/**/css, js, images 등) 전부 허용
+                        // 정적 리소스 허용
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
 
-                        // 서버 렌더링 페이지(컨트롤러 매핑) 전부 공개
-                        .requestMatchers("/", "/index", "/login", "/signup", "/board/**", "/error", "/favicon.ico").permitAll()
+                        // 서버 렌더링 페이지 공개
+                        .requestMatchers("/", "/index", "/login", "/signup", "/profile",
+                                "/board/**", "/error", "/favicon.ico").permitAll()
 
                         // CORS 프리플라이트
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 인증 API(로그인/회원가입 등) 공개
-                        .requestMatchers(HttpMethod.POST, "/auth/login", "/auth/signup").permitAll()
+                        // 인증/회원가입/이메일 인증 API 공개 (★ /api/auth/* 로 통일)
+                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/auth/verify").permitAll()
 
-                        // 게시판 REST: 목록/상세는 공개, 나머지 메서드는 인증
+                        // 게시판 목록/상세 공개
                         .requestMatchers(HttpMethod.GET, "/api/board", "/api/board/**").permitAll()
 
                         // 이 밖의 모든 /api/** 는 인증 필요
                         .requestMatchers("/api/**").authenticated()
 
-                        // 혹시 남는 나머지 경로도 인증
+                        // 나머지는 전부 인증
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
     @Bean
     PasswordEncoder passwordEncoder() {
@@ -68,5 +69,24 @@ public class SecurityConfig {
     @Bean
     AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
+    }
+
+    @Bean
+    CorsConfigurationSource corsConfigurationSource() {
+        var cfg = new CorsConfiguration();
+        // 다양한 포트/스킴 허용
+        cfg.setAllowedOriginPatterns(List.of(
+                "http://54.180.3.34", "http://54.180.3.34:*",
+                "https://54.180.3.34",
+                "http://localhost:*"
+        ));
+        cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
+        // Authorization 포함
+        cfg.setAllowedHeaders(List.of("*"));
+        cfg.setAllowCredentials(true);
+
+        var source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", cfg);
+        return source;
     }
 }

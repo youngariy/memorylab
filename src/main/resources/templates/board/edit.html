@@ -52,23 +52,52 @@
     const tokenKey = 'accessToken';
     const getToken = () => localStorage.getItem(tokenKey);
 
-    async function api(path, {method='GET', headers={}, body, raw=false} = {}) {
-        const h = {'Content-Type': 'application/json', ...headers};
-        const t = getToken(); if (t) h['Authorization'] = 'Bearer ' + t;
-        const res = await fetch(path, {method, headers: h, body});
-        if (res.status === 401) { localStorage.removeItem(tokenKey); alert('로그인이 필요합니다.'); location.href = '/login'; throw new Error('Unauthorized'); }
-        if (!res.ok) { const msg = await res.text().catch(()=> ''); throw new Error(msg || ('HTTP '+res.status)); }
-        return raw ? res : res.json();
+    // ✅ 204/빈 본문 안전한 공통 API
+    async function api(path, { method='GET', headers={}, body, expect='json' } = {}) {
+        const h = new Headers(headers);
+        if (body && !(body instanceof FormData) && !h.has('Content-Type')) {
+            h.set('Content-Type', 'application/json');
+        }
+        const t = getToken(); if (t) h.set('Authorization', 'Bearer ' + t);
+        const res = await fetch(path, { method, headers:h, body });
+
+        if (res.status === 401) {
+            localStorage.removeItem(tokenKey);
+            alert('로그인이 필요합니다.');
+            location.href = '/login';
+            throw new Error('Unauthorized');
+        }
+        if (!res.ok) {
+            const msg = await res.text().catch(()=> '');
+            throw new Error(msg || ('HTTP ' + res.status));
+        }
+        if (res.status === 204) return null;
+        const ct  = res.headers.get('content-type') || '';
+        const txt = await res.text();
+        if (!txt) return null;
+        if (expect === 'json' && ct.includes('application/json')) {
+            try { return JSON.parse(txt); } catch { return null; }
+        }
+        return txt;
     }
 
+    // 헤더 토글 (✅ 로그인 시 새 글 보이도록)
     (function headerToggle(){
         const t = getToken();
         const auth = document.getElementById('authLinks');
         const newLink = document.getElementById('newLink');
-        if (t) { if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; if (newLink) newLink.href = '/board/new'; }
-        else { if (auth) auth.innerHTML = `<a href="/login">로그인</a>`; if (newLink) newLink.href = '/login'; }
-        if (newLink) newLink.style.display = 'none';
-        document.addEventListener('click', (e) => { if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(tokenKey); location.reload(); } });
+        if (t) {
+            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
+            if (newLink) { newLink.href = '/board/new'; newLink.style.display = ''; }
+        } else {
+            if (auth) auth.innerHTML = `<a href="/login">로그인</a>`;
+            if (newLink) { newLink.href = '/login'; newLink.style.display = 'none'; }
+        }
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'logoutBtn') {
+                e.preventDefault(); localStorage.removeItem(tokenKey); location.reload();
+            }
+        });
     })();
 
     if (!getToken()) { alert('로그인이 필요합니다.'); location.href = '/login'; }
@@ -88,7 +117,10 @@
     window.__dirty = false;
     f.addEventListener('input', ()=> { window.__dirty = true; });
 
-    window.addEventListener('beforeunload', (evt) => { if (window.__dirty) { evt.preventDefault(); evt.returnValue = ''; } });
+    window.addEventListener('beforeunload', (evt) => {
+        if (window.__dirty) { evt.preventDefault(); evt.returnValue = ''; }
+    });
+
     document.addEventListener('click', (e)=>{
         if (!window.__dirty) return;
         const a = e.target.closest('a'); if (!a) return;
@@ -96,6 +128,7 @@
         if (!confirm('변경 사항이 저장되지 않았습니다. 이동하시겠어요?')) e.preventDefault();
     });
 
+    // ✅ 저장 후 즉시 알림 + view로 이동 (204도 OK)
     f.addEventListener('submit', async (e)=>{
         e.preventDefault();
         const fd = new FormData(f);
@@ -105,10 +138,10 @@
             category: (fd.get('category') || '').trim() || null,
             visibility: (fd.get('visibility') || 'PUBLIC').trim().toUpperCase()
         };
-        await api(`/api/board/${id}`, {method:'PUT', body: JSON.stringify(payload)});
+        await api(`/api/board/${id}`, { method:'PUT', body: JSON.stringify(payload) });
         window.__dirty = false;
         alert('저장되었습니다.');
-        location.href = `/board/view?id=${encodeURIComponent(id)}`;
+        setTimeout(()=>{ location.href = `/board/view?id=${encodeURIComponent(id)}`; }, 0);
     });
 
     document.getElementById('cancel').addEventListener('click', (e)=>{

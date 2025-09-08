@@ -12,11 +12,11 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.security.core.authority.SimpleGrantedAuthority; //
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.io.IOException;
 import java.util.List;
 import javax.crypto.SecretKey;
-import java.io.IOException;
-import java.util.Collections;
 
 @Component
 @RequiredArgsConstructor
@@ -40,18 +40,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .parseSignedClaims(token)
                         .getPayload();
 
-                // userId 꺼내기 (AuthService에서 토큰에 넣은 claim 기준)
-                Long userId = claims.get("id", Long.class);
+                Long userId = claims.get("uid", Long.class);
 
                 if (userId != null) {
-                    UsernamePasswordAuthenticationToken auth =
-                            new UsernamePasswordAuthenticationToken(
-                                    userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER"))
-                            );
+                    var auth = new UsernamePasswordAuthenticationToken(
+                            userId,
+                            null,
+                            List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                    );
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
-            } catch (JwtException e) {
-                // 토큰 유효하지 않으면 무시 (401은 ControllerAdvice에서 처리 가능)
+            } catch (JwtException ignored) {
+                // 유효하지 않은 토큰은 무시 (401은 컨트롤러/예외처리기에서)
             }
         }
 
@@ -60,7 +60,46 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String resolveToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
-        return (bearer != null && bearer.startsWith("Bearer ")) ?
-                bearer.substring(7) : null;
+        if (bearer == null) return null;
+        if (!bearer.startsWith("Bearer ")) return null;
+
+        String t = bearer.substring(7).trim();
+        // "Bearer"만 왔거나 "Bearer null" 같은 경우 방지
+        if (t.isEmpty() || "null".equalsIgnoreCase(t) || "undefined".equalsIgnoreCase(t)) {
+            return null;
+        }
+        return t;
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+
+        // 1) CORS 프리플라이트는 무조건 패스
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) return true;
+
+        // 2) SSR/정적 페이지는 패스
+        if (uri.equals("/")
+                || uri.startsWith("/login")
+                || uri.startsWith("/signup")
+                || uri.startsWith("/profile")
+                || uri.startsWith("/board")
+                || uri.startsWith("/css/")
+                || uri.startsWith("/js/")
+                || uri.startsWith("/images/")
+                || uri.equals("/favicon.ico")
+                || uri.startsWith("/error")) {
+            return true;
+        }
+
+        // 3) 공개 인증 API만 패스 (★ me는 스킵 금지)
+        if (uri.equals("/api/auth/login")
+                || uri.equals("/api/auth/register")
+                || uri.equals("/api/auth/verify")) {
+            return true;
+        }
+
+        // 그 외는 필터 적용
+        return false;
     }
 }

@@ -144,27 +144,38 @@
             const data = await res.json();
 
             const items = Array.isArray(data.content) ? data.content : [];
+
+            // 🔢 번호 계산 준비
+            const total    = parseInt(data.totalElements ?? 0, 10) || 0;
+            const curPage  = parseInt(data.number ?? page, 10) || 0;
+            const pageSize = parseInt(data.size ?? size, 10)   || size;
+            // 현재 페이지의 첫 번째 행 번호(전역 기준, 정렬: 최신글 우선 가정)
+            const pageStartNo = total ? (total - (curPage * pageSize)) : (curPage * pageSize + 1);
+
             if (items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="meta">게시글이 없습니다.</td></tr>`;
             } else {
-                tbody.innerHTML = items.map((it) => {
-                    const id = it.id;
-                    const title = escapeHtml(it.title);
-                    const category = escapeHtml(it.category || '');
-                    const vis = String(it.visibility || '').toUpperCase();
-                    const author = escapeHtml(it.authorNickname || '익명');
-                    const views = (typeof it.viewCount === 'number') ? it.viewCount : (it.viewCount || 0);
+                tbody.innerHTML = items.map((it, idx) => {
+                    // 전역 기준 번호 (total이 없으면 페이지 내부 번호로 대체)
+                    const rowNo = total ? (pageStartNo - idx) : (curPage * pageSize + idx + 1);
+
+                    const id        = it.id;
+                    const title     = escapeHtml(it.title);
+                    const categoryV = escapeHtml(it.category || '');
+                    const vis       = String(it.visibility || '').toUpperCase();
+                    const author    = escapeHtml(it.authorNickname || '익명');
+                    const views     = (typeof it.viewCount === 'number') ? it.viewCount : (it.viewCount || 0);
                     const createdAt = fmtDate(it.createdAt);
 
                     return `
             <tr>
-              <td>${id}</td>
+              <td>${rowNo}</td>
               <td>
                 <a href="/board/view?id=${encodeURIComponent(id)}">${title}</a>
-                ${category ? ` <span class="pill">${category}</span>` : ''}
+                ${categoryV ? ` <span class="pill">${categoryV}</span>` : ''}
                 ${vis === 'PRIVATE' ? ` <span class="pill private">나만보기</span>` : ''}
               </td>
-              <td>${category || '-'}</td>
+              <td>${categoryV || '-'}</td>
               <td>${author}</td>
               <td>${views}</td>
               <td>${createdAt}</td>
@@ -226,6 +237,7 @@
     loadList();
     window.addEventListener('popstate', () => { setFormFromQs(); loadList(); });
 </script>
+
 
 </body>
 </html>

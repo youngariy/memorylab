@@ -4,12 +4,13 @@
     <meta charset="UTF-8">
     <title>로그인</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
-        form { border: 1px solid #ccc; padding: 20px; border-radius: 8px; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; }
-        input { width: 300px; padding: 8px; }
-        button { width: 100%; padding: 10px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        body { font-family: sans-serif; display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; }
+        form { border:1px solid #ccc; padding:20px; border-radius:8px; }
+        .form-group { margin-bottom:15px; }
+        label { display:block; margin-bottom:5px; }
+        input { width:300px; padding:8px; }
+        button { width:100%; padding:10px; background:#007bff; color:#fff; border:none; border-radius:4px; cursor:pointer; }
+        #message { margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -29,45 +30,50 @@
 <p id="message"></p>
 
 <script>
-    document.getElementById('login-form').addEventListener('submit', async function(event) {
-        // 1. form의 기본 제출 동작을 막습니다.
+    const AUTH_BASE = '/api/auth'; // ← 백엔드 경로 통일
+
+    document.getElementById('login-form').addEventListener('submit', async (event) => {
         event.preventDefault();
 
-        const email = document.getElementById('email').value;
+        const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const messageEl = document.getElementById('message');
 
-        // 2. 입력된 데이터를 JSON 객체로 만듭니다.
-        const data = {
-            email: email,
-            password: password
-        };
-
-        // 3. fetch API를 사용해 서버로 JSON 데이터를 POST 방식으로 전송합니다.
         try {
-            const response = await fetch('/auth/login', {
+            const res = await fetch(`${AUTH_BASE}/login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
             });
 
-            if (response.ok) {
-                // 4. 응답이 성공적이면(2xx), accessToken을 받아 localStorage에 저장합니다.
-                const result = await response.json();
-                localStorage.setItem('accessToken', result.accessToken);
-                messageEl.textContent = '로그인 성공! 게시판으로 이동합니다.';
-                messageEl.style.color = 'green';
-                window.location.href = 'board/list'; // 게시판 페이지로 이동
-            } else {
-                // 5. 응답이 실패하면 오류 메시지를 표시합니다.
-                messageEl.textContent = '로그인 실패. 이메일 또는 비밀번호를 확인하세요.';
+            if (!res.ok) {
+                const text = await res.text().catch(()=>'');
+                if (res.status === 401) {
+                    messageEl.textContent = '로그인 실패(401): 이메일/비밀번호를 확인하세요.';
+                } else if (res.status === 403) {
+                    messageEl.textContent = '접근 거부(403): 이메일 인증이 필요하거나 권한이 없습니다.';
+                } else {
+                    messageEl.textContent = `오류(${res.status}): ${text || '로그인 중 문제가 발생했습니다.'}`;
+                }
                 messageEl.style.color = 'red';
+                return;
             }
-        } catch (error) {
-            console.error('Error:', error);
-            messageEl.textContent = '오류가 발생했습니다.';
+
+            const { accessToken } = await res.json();
+            if (!accessToken) {
+                messageEl.textContent = '토큰이 없습니다. 관리자에게 문의하세요.';
+                messageEl.style.color = 'red';
+                return;
+            }
+
+            localStorage.setItem('accessToken', accessToken);
+            messageEl.textContent = '로그인 성공! 게시판으로 이동합니다.';
+            messageEl.style.color = 'green';
+            // 잠깐 보여주고 이동
+            setTimeout(()=> { window.location.href = '/board/list'; }, 300);
+        } catch (err) {
+            console.error(err);
+            messageEl.textContent = '네트워크 오류가 발생했습니다.';
             messageEl.style.color = 'red';
         }
     });
