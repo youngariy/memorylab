@@ -3,13 +3,24 @@
 <head>
     <meta charset="utf-8"/>
     <title>글 수정</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+        body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin: 24px; max-width: 900px; }
         nav { margin-bottom: 16px; }
         nav a { margin-right: 8px; }
-        input, select, textarea { width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px; }
-        textarea { min-height: 240px; }
-        .row { margin-bottom: 12px; }
+        input, select, textarea { width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px; box-sizing: border-box; font-size: 16px; }
+        textarea { min-height: 180px; }
+        .row { margin-bottom: 16px; }
+        .actions { display:flex; gap:10px; align-items:center; }
+        label { display: block; margin-bottom: 4px; font-weight: 500; }
+
+        /* === 동영상 업로드 UI 스타일 === */
+        #dropzone { border: 2px dashed #e5e7eb; border-radius: 8px; padding: 40px; text-align: center; color: #6b7280; cursor: pointer; transition: border-color 0.2s, background-color 0.2s; }
+        #dropzone.active { border-color: #3b82f6; background-color: #eff6ff; }
+        #fileInput { display: none; }
+        #fileInfo, #currentVideoInfo { margin-top: 16px; font-size: 14px; color: #374151; background-color: #f9fafb; padding: 12px; border-radius: 8px; }
+        #progress-container { width: 100%; background-color: #e5e7eb; border-radius: 8px; overflow: hidden; margin-top: 8px; display: none; }
+        #progress-bar { width: 0%; height: 16px; background-color: #3b82f6; text-align: center; line-height: 16px; color: white; font-size: 12px; transition: width 0.2s; }
     </style>
 </head>
 <body>
@@ -22,135 +33,184 @@
 
 <main>
     <h1>글 수정</h1>
-    <form id="f">
+
+    <form id="f" novalidate>
+        <!-- === 동영상 업로드 UI === -->
         <div class="row">
-            <input name="title" maxlength="120" required placeholder="제목">
+            <label>새 동영상 첨부 (선택)</label>
+            <div id="currentVideoInfo" style="display:none;"></div>
+            <div id="dropzone">
+                <input type="file" id="fileInput" accept="video/mp4" />
+                <p>새 동영상을 올리려면, 여기에 MP4 파일을 드래그 앤 드롭하거나 클릭하세요.</p>
+                <small>(기존 동영상은 대체됩니다. 최대 500MB)</small>
+            </div>
+            <div id="fileInfo"></div>
+            <div id="progress-container">
+                <div id="progress-bar">0%</div>
+            </div>
         </div>
+
         <div class="row">
-            <select name="category">
-                <option value="">분류 없음</option>
+            <label for="title">제목</label>
+            <input id="title" name="title" placeholder="제목을 입력하세요" maxlength="120" required />
+        </div>
+
+        <div class="row">
+            <label for="tags">태그</label>
+            <input id="tags" name="tags" placeholder="쉼표(,)로 구분하여 태그를 입력하세요" />
+        </div>
+
+        <div class="row">
+            <label for="category">분류</label>
+            <select id="category" name="category" required>
                 <option value="NOTICE">공지</option>
                 <option value="FREE">자유</option>
                 <option value="QNA">QnA</option>
             </select>
         </div>
+
         <div class="row">
-            <select name="visibility">
+            <label for="visibility">공개 범위</label>
+            <select id="visibility" name="visibility">
                 <option value="PUBLIC">전체공개</option>
                 <option value="PRIVATE">나만보기</option>
             </select>
         </div>
+
         <div class="row">
-            <textarea name="content" required placeholder="내용"></textarea>
+            <label for="content">설명</label>
+            <textarea id="content" name="content" placeholder="동영상에 대한 설명을 입력하세요" required></textarea>
         </div>
-        <button type="submit">저장</button>
-        <a id="cancel" href="#" style="margin-left:12px">취소</a>
+
+        <div class="actions">
+            <button id="submitBtn" type="submit">수정</button>
+            <a id="cancel" href="/board/list">취소</a>
+        </div>
     </form>
 </main>
 
 <script>
-    const tokenKey = 'accessToken';
-    const getToken = () => localStorage.getItem(tokenKey);
+    // === 개선된 공용 스크립트 (이전과 동일) ===
+    const accessTokenKey = 'accessToken', refreshTokenKey = 'refreshToken';
+    const getAccessToken = () => localStorage.getItem(accessTokenKey);
+    const logout = () => { localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); alert('세션이 만료되었습니다. 다시 로그인해 주세요.'); location.href = '/login'; };
+    let isRefreshing = false, refreshSubscribers = [];
+    const onRefreshed = (t) => { refreshSubscribers.forEach(c => c(t)); refreshSubscribers = []; };
+    const addRefreshSubscriber = (c) => { refreshSubscribers.push(c); };
+    async function refreshAccessToken() { isRefreshing = true; try { const rt = localStorage.getItem(refreshTokenKey); if (!rt) { logout(); return Promise.reject(new Error('No refresh token')); } const res = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); if (!res.ok) { logout(); return Promise.reject(new Error('Failed to refresh token')); } const { accessToken: newAccessToken } = await res.json(); localStorage.setItem(accessTokenKey, newAccessToken); isRefreshing = false; onRefreshed(newAccessToken); return newAccessToken; } catch (e) { isRefreshing = false; logout(); return Promise.reject(e); } }
+    async function api(path, options = {}) { const makeRequest = async (token) => { const { method = 'GET', headers = {}, body } = options; const h = { ...headers }; if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json'; if (token) h['Authorization'] = 'Bearer ' + token; return fetch(path, { method, headers: h, body }); }; let res = await makeRequest(getAccessToken()); if (res.status === 401) { if (!isRefreshing) { try { const newAccessToken = await refreshAccessToken(); res = await makeRequest(newAccessToken); } catch (error) { throw new Error('Session expired.'); } } else { res = await new Promise((resolve) => { addRefreshSubscriber(async (newAccessToken) => { resolve(await makeRequest(newAccessToken)); }); }); } } if (!res.ok) { let msg = `${res.status} ${res.statusText}`; try { const ct = res.headers.get('content-type') || ''; if (ct.includes('application/json')) { const j = await res.json(); if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`; } else { const t = await res.text(); if (t) msg += `: ${t}`; } } catch {} throw new Error(msg); } const ct = res.headers.get('content-type') || ''; return ct.includes('application/json') ? res.json() : null; }
+    (function headerToggle(){ const t = getAccessToken(); const auth = document.getElementById('authLinks'); if (t) { auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; } else { auth.innerHTML = `<a href="/login">로그인</a> | <a href="/signup">회원가입</a>`; } document.addEventListener('click', (e) => { if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); location.href = '/'; } }); })();
+    if (!getAccessToken()) { alert('로그인이 필요합니다.'); location.href = '/login'; }
 
-    // ✅ 204/빈 본문 안전한 공통 API
-    async function api(path, { method='GET', headers={}, body, expect='json' } = {}) {
-        const h = new Headers(headers);
-        if (body && !(body instanceof FormData) && !h.has('Content-Type')) {
-            h.set('Content-Type', 'application/json');
-        }
-        const t = getToken(); if (t) h.set('Authorization', 'Bearer ' + t);
-        const res = await fetch(path, { method, headers:h, body });
+    // === 페이지 고유 스크립트 ===
+    const $ = (s) => document.querySelector(s);
+    const boardId = new URLSearchParams(location.search).get('id');
+    if (!boardId) { alert('게시글 ID가 없습니다.'); location.href = '/board/list'; }
 
-        if (res.status === 401) {
-            localStorage.removeItem(tokenKey);
-            alert('로그인이 필요합니다.');
-            location.href = '/login';
-            throw new Error('Unauthorized');
-        }
-        if (!res.ok) {
-            const msg = await res.text().catch(()=> '');
-            throw new Error(msg || ('HTTP ' + res.status));
-        }
-        if (res.status === 204) return null;
-        const ct  = res.headers.get('content-type') || '';
-        const txt = await res.text();
-        if (!txt) return null;
-        if (expect === 'json' && ct.includes('application/json')) {
-            try { return JSON.parse(txt); } catch { return null; }
-        }
-        return txt;
-    }
+    const dropzone = $('#dropzone'), fileInput = $('#fileInput'), fileInfo = $('#fileInfo');
+    const progressContainer = $('#progress-container'), progressBar = $('#progress-bar');
+    const f = $('#f'), submitBtn = $('#submitBtn');
+    let selectedFile = null;
 
-    // 헤더 토글 (✅ 로그인 시 새 글 보이도록)
-    (function headerToggle(){
-        const t = getToken();
-        const auth = document.getElementById('authLinks');
-        const newLink = document.getElementById('newLink');
-        if (t) {
-            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
-            if (newLink) { newLink.href = '/board/new'; newLink.style.display = ''; }
-        } else {
-            if (auth) auth.innerHTML = `<a href="/login">로그인</a>`;
-            if (newLink) { newLink.href = '/login'; newLink.style.display = 'none'; }
-        }
-        document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'logoutBtn') {
-                e.preventDefault(); localStorage.removeItem(tokenKey); location.reload();
+    // 기존 게시글 정보 로드
+    async function loadDetail() {
+        try {
+            const data = await api(`/api/board/${boardId}`);
+            $('#title').value = data.title || '';
+            $('#content').value = data.content || '';
+            $('#tags').value = data.tags || '';
+            $('#category').value = data.category || 'FREE';
+            $('#visibility').value = data.visibility || 'PUBLIC';
+
+            // 현재 동영상 정보 표시
+            if (data.videoUrl) {
+                const videoName = data.videoUrl.split('/').pop();
+                const statusMap = { 'COMPLETED': '변환 완료 🎥', 'PROCESSING': '처리 중 ⏳', 'UPLOADED': '처리 대기 ⏳', 'FAILED': '변환 실패 ❌' };
+                $('#currentVideoInfo').innerHTML = `<b>현재 동영상:</b> ${videoName} (상태: ${statusMap[data.conversionStatus] || '알 수 없음'})`;
+                $('#currentVideoInfo').style.display = 'block';
             }
-        });
-    })();
-
-    if (!getToken()) { alert('로그인이 필요합니다.'); location.href = '/login'; }
-
-    const $ = (s)=>document.querySelector(s);
-    const id = new URLSearchParams(location.search).get('id');
-    const f = $('#f');
-
-    async function load(){
-        const d = await api(`/api/board/${id}`);
-        f.title.value = d.title || '';
-        f.content.value = d.content || '';
-        f.category.value = (d.category || '');
-        f.visibility.value = (d.visibility || 'PUBLIC');
+        } catch (err) {
+            alert('게시글 정보를 불러오는 데 실패했습니다: ' + (err.message || err));
+            location.href = '/board/list';
+        }
     }
 
-    window.__dirty = false;
-    f.addEventListener('input', ()=> { window.__dirty = true; });
+    // 파일 처리 및 유효성 검사 함수
+    function handleFile(file) {
+        if (!file) return;
+        if (file.type !== 'video/mp4') { alert('MP4 형식의 동영상 파일만 업로드할 수 있습니다.'); return; }
+        const maxSize = 500 * 1024 * 1024;
+        if (file.size > maxSize) { alert(`파일 크기는 500MB를 초과할 수 없습니다.`); return; }
+        selectedFile = file;
+        fileInfo.textContent = `새로 첨부할 파일: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
+    }
 
-    window.addEventListener('beforeunload', (evt) => {
-        if (window.__dirty) { evt.preventDefault(); evt.returnValue = ''; }
-    });
+    // Dropzone 이벤트 리스너
+    dropzone.addEventListener('click', () => fileInput.click());
+    dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('active'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('active'));
+    dropzone.addEventListener('drop', (e) => { e.preventDefault(); dropzone.classList.remove('active'); handleFile(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
 
-    document.addEventListener('click', (e)=>{
-        if (!window.__dirty) return;
-        const a = e.target.closest('a'); if (!a) return;
-        if (a.target || a.href.startsWith('javascript:')) return;
-        if (!confirm('변경 사항이 저장되지 않았습니다. 이동하시겠어요?')) e.preventDefault();
-    });
-
-    // ✅ 저장 후 즉시 알림 + view로 이동 (204도 OK)
-    f.addEventListener('submit', async (e)=>{
+    // 폼 제출 이벤트 리스너
+    f.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fd = new FormData(f);
-        const payload = {
-            title: (fd.get('title')||'').trim(),
-            content: (fd.get('content')||'').trim(),
-            category: (fd.get('category') || '').trim() || null,
-            visibility: (fd.get('visibility') || 'PUBLIC').trim().toUpperCase()
+        const title = $('#title').value.trim();
+        const content = $('#content').value.trim();
+        if (!title || !content) { alert('제목과 설명을 입력하세요.'); return; }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = '업로드 준비 중...';
+        progressContainer.style.display = selectedFile ? 'block' : 'none';
+
+        const formData = new FormData();
+        const boardData = {
+            title: title,
+            content: content,
+            category: $('#category').value,
+            visibility: $('#visibility').value,
+            tags: $('#tags').value.trim()
         };
-        await api(`/api/board/${id}`, { method:'PUT', body: JSON.stringify(payload) });
-        window.__dirty = false;
-        alert('저장되었습니다.');
-        setTimeout(()=>{ location.href = `/board/view?id=${encodeURIComponent(id)}`; }, 0);
+        formData.append('req', new Blob([JSON.stringify(boardData)], { type: "application/json" }));
+        if (selectedFile) { formData.append('videoFile', selectedFile); }
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('PUT', `/api/board/${boardId}`, true);
+        const accessToken = getAccessToken();
+        if (accessToken) xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
+
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percentComplete = Math.round((event.loaded / event.total) * 100);
+                progressBar.style.width = percentComplete + '%';
+                progressBar.textContent = percentComplete + '%';
+                submitBtn.textContent = `업로드 중... ${percentComplete}%`;
+            }
+        };
+
+        xhr.onload = () => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '수정';
+            if (xhr.status >= 200 && xhr.status < 300) {
+                alert('게시글이 성공적으로 수정되었습니다.');
+                location.href = `/board/view?id=${boardId}`;
+            } else if (xhr.status === 401) {
+                logout();
+            } else {
+                alert(`수정 실패: ${xhr.status} ${xhr.statusText}`);
+            }
+        };
+
+        xhr.onerror = () => {
+            submitBtn.disabled = false;
+            submitBtn.textContent = '수정';
+            alert('네트워크 오류로 수정에 실패했습니다.');
+        };
+
+        xhr.send(formData);
     });
 
-    document.getElementById('cancel').addEventListener('click', (e)=>{
-        e.preventDefault();
-        if (window.__dirty && !confirm('변경 사항이 저장되지 않았습니다. 취소하시겠어요?')) return;
-        location.href = `/board/view?id=${encodeURIComponent(id)}`;
-    });
-
-    load();
+    loadDetail();
 </script>
 </body>
 </html>

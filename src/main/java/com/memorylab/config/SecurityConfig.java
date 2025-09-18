@@ -43,9 +43,19 @@ public class SecurityConfig {
                         // CORS 프리플라이트
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
-                        // 인증/회원가입/이메일 인증 API 공개 (★ /api/auth/* 로 통일)
-                        .requestMatchers(HttpMethod.POST, "/api/auth/login", "/api/auth/register").permitAll()
-                        .requestMatchers(HttpMethod.GET,  "/api/auth/verify").permitAll()
+                        // === 인증 관련 API 공개 설정 수정 ===
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/refresh",
+                                "/api/auth/send-verification-code", // 인증코드 발송
+                                "/api/auth/verify-code"             // 인증코드 확인
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/auth/check-email",             // 이메일 중복 확인
+                                "/api/auth/check-nickname"           // 닉네임 중복 확인
+                        ).permitAll()
+                        // =================================
 
                         // 게시판 목록/상세 공개
                         .requestMatchers(HttpMethod.GET, "/api/board", "/api/board/**").permitAll()
@@ -74,14 +84,12 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         var cfg = new CorsConfiguration();
-        // 다양한 포트/스킴 허용
         cfg.setAllowedOriginPatterns(List.of(
                 "http://54.180.3.34", "http://54.180.3.34:*",
                 "https://54.180.3.34",
                 "http://localhost:*"
         ));
         cfg.setAllowedMethods(List.of("GET","POST","PUT","PATCH","DELETE","OPTIONS"));
-        // Authorization 포함
         cfg.setAllowedHeaders(List.of("*"));
         cfg.setAllowCredentials(true);
 

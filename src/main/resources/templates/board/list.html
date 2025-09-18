@@ -8,9 +8,29 @@
     <style>
         body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.5; }
         header, nav { margin-bottom: 12px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; } /* table-layout: fixed 추가 */
+        th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; } /* vertical-align 추가 */
+        td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } /* 기본 잘림 처리 */
         th { background: #f7f7f7; }
+
+        /* === 제목 줄 스타일링 === */
+        .title-line {
+            display: flex;
+            align-items: flex-start; /* 여러 줄일 수 있는 태그를 위해 start로 정렬 */
+            gap: 6px;
+        }
+        .title-line a {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex-grow: 1; /* 제목이 남는 공간을 차지하도록 */
+        }
+        .title-line .tags, .title-line .pills {
+            white-space: normal; /* 태그와 필은 여러 줄로 표시될 수 있도록 */
+            flex-shrink: 0; /* 줄어들지 않도록 */
+        }
+        /* ======================= */
+
         .toolbar { display:flex; gap:8px; align-items:center; margin: 12px 0; flex-wrap: wrap; }
         .spacer { flex: 1 }
         .btn { display:inline-block; padding: 8px 12px; border:1px solid #ccc; border-radius:6px; text-decoration:none; cursor:pointer; }
@@ -18,6 +38,12 @@
         .btn[disabled] { opacity: .5; cursor: not-allowed; }
         .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; }
         .pill.private { border-color:#ef4444; color:#ef4444; }
+        .tag-pill { display: inline-block; background-color: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 999px; font-size: 12px; text-decoration: none; margin-right: 4px; margin-bottom: 4px; }
+        .tag-pill:hover { background-color: #e0e7ff; }
+
+        .notice-row { background-color: #fefce8; }
+        .notice-row td:first-child { font-weight: bold; color: #ca8a04; }
+
         .pager { display:flex; gap:6px; align-items:center; flex-wrap: wrap; margin-top: 12px; }
         .page { padding:4px 10px; border:1px solid #ccc; border-radius:6px; text-decoration:none; }
         .page.active { background:#111; color:#fff; border-color:#111; pointer-events:none; }
@@ -40,7 +66,8 @@
 
 <section class="toolbar">
     <form id="searchForm" class="toolbar" style="margin:0;">
-        <input type="text" id="q" name="q" placeholder="제목 검색" />
+        <input type="text" id="q" name="q" placeholder="제목/내용 검색" />
+        <input type="text" id="tag" name="tag" placeholder="태그 검색" />
         <select id="category" name="category">
             <option value="">전체 카테고리</option>
             <option value="NOTICE">공지</option>
@@ -72,47 +99,27 @@
 <div class="pager" id="pager"></div>
 
 <script>
-    const TOKEN_KEY = 'accessToken';
-    const token = localStorage.getItem(TOKEN_KEY);
-
-    const loginState = document.getElementById('loginState');
-    const authLinks  = document.getElementById('authLinks');
-    const newBtn     = document.getElementById('newBtn');
-
-    if (token) {
-        loginState.textContent = '로그인 상태: 토큰 보유';
-        authLinks.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
-        newBtn.style.display = 'inline-block';
-    } else {
-        loginState.textContent = '로그인 상태: 미로그인';
-        newBtn.style.display = 'none';
-    }
-
-    document.addEventListener('click', (e) => {
-        if (e.target && e.target.id === 'logoutBtn') {
-            e.preventDefault();
-            localStorage.removeItem(TOKEN_KEY);
-            location.reload();
-        }
-    });
-
-    function escapeHtml(str) {
-        if (str == null) return '';
-        return String(str)
-            .replaceAll('&','&amp;')
-            .replaceAll('<','&lt;')
-            .replaceAll('>','&gt;')
-            .replaceAll('"','&quot;')
-            .replaceAll("'",'&#39;');
-    }
-
+    // === 개선된 공용 스크립트 ===
+    const accessTokenKey = 'accessToken', refreshTokenKey = 'refreshToken';
+    const getAccessToken = () => localStorage.getItem(accessTokenKey);
+    const logout = () => { localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); alert('세션이 만료되었습니다. 다시 로그인해 주세요.'); location.href = '/login'; };
+    let isRefreshing = false, refreshSubscribers = [];
+    const onRefreshed = (t) => { refreshSubscribers.forEach(c => c(t)); refreshSubscribers = []; };
+    const addRefreshSubscriber = (c) => { refreshSubscribers.push(c); };
+    async function refreshAccessToken() { isRefreshing = true; try { const rt = localStorage.getItem(refreshTokenKey); if (!rt) { logout(); return Promise.reject(new Error('No refresh token')); } const res = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); if (!res.ok) { logout(); return Promise.reject(new Error('Failed to refresh token')); } const { accessToken: newAccessToken } = await res.json(); localStorage.setItem(accessTokenKey, newAccessToken); isRefreshing = false; onRefreshed(newAccessToken); return newAccessToken; } catch (e) { isRefreshing = false; logout(); return Promise.reject(e); } }
+    async function api(path, options = {}) { const makeRequest = async (token) => { const { method = 'GET', headers = {}, body } = options; const h = { ...headers }; if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json'; if (token) h['Authorization'] = 'Bearer ' + token; return fetch(path, { method, headers: h, body }); }; let res = await makeRequest(getAccessToken()); if (res.status === 401) { if (!isRefreshing) { try { const newAccessToken = await refreshAccessToken(); res = await makeRequest(newAccessToken); } catch (error) { throw new Error('Session expired.'); } } else { res = await new Promise((resolve) => { addRefreshSubscriber(async (newAccessToken) => { resolve(await makeRequest(newAccessToken)); }); }); } } if (!res.ok) { let msg = `${res.status} ${res.statusText}`; try { const ct = res.headers.get('content-type') || ''; if (ct.includes('application/json')) { const j = await res.json(); if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`; } else { const t = await res.text(); if (t) msg += `: ${t}`; } } catch {} throw new Error(msg); } const ct = res.headers.get('content-type') || ''; return ct.includes('application/json') ? res.json() : null; }
+    (function headerToggle(){ const t = getAccessToken(); const auth = document.getElementById('authLinks'); const newBtn = document.getElementById('newBtn'); const loginState = document.getElementById('loginState'); if (t) { loginState.textContent = '로그인 상태: 토큰 보유'; auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; newBtn.style.display = 'inline-block'; } else { loginState.textContent = '로그인 상태: 미로그인'; newBtn.style.display = 'none'; } document.addEventListener('click', (e) => { if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); location.reload(); } }); })();
+    
+    // === 페이지 고유 스크립트 ===
+    function escapeHtml(str) { if (str == null) return ''; return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'); }
     function fmtDate(iso) { try { return new Date(iso).toLocaleString('ko-KR'); } catch { return iso || ''; } }
-
+    
     function getQs() {
         const p = new URLSearchParams(location.search);
         return {
             q: p.get('q') || '',
             category: p.get('category') || '',
+            tag: p.get('tag') || '',
             page: Math.max(0, parseInt(p.get('page') || '0', 10)) || 0,
             size: Math.max(1, parseInt(p.get('size') || '10', 10)) || 10
         };
@@ -122,58 +129,69 @@
         const qs = getQs();
         document.getElementById('q').value = qs.q;
         document.getElementById('category').value = qs.category;
+        document.getElementById('tag').value = qs.tag;
     }
 
     async function loadList() {
-        const { q, category, page, size } = getQs();
+        const { q, category, tag, page, size } = getQs();
         const url = new URL('/api/board', location.origin);
-        if (q)        url.searchParams.set('q', q);
-        if (category) url.searchParams.set('category', category); // Enum 값 그대로 전달
+        if (q) url.searchParams.set('q', q);
+        if (category) url.searchParams.set('category', category);
+        if (tag) url.searchParams.set('tag', tag);
         url.searchParams.set('page', page);
         url.searchParams.set('size', size);
 
         const tbody = document.getElementById('listBody');
         const pager = document.getElementById('pager');
-
         tbody.innerHTML = `<tr><td colspan="6" class="meta">불러오는 중...</td></tr>`;
         pager.innerHTML = '';
 
         try {
-            const res = await fetch(url, { headers: token ? { 'Authorization': 'Bearer ' + token } : {} });
-            if (!res.ok) throw new Error('목록 조회 실패(' + res.status + ')');
-            const data = await res.json();
-
+            const data = await api(url.toString());
             const items = Array.isArray(data.content) ? data.content : [];
-
-            // 🔢 번호 계산 준비
-            const total    = parseInt(data.totalElements ?? 0, 10) || 0;
-            const curPage  = parseInt(data.number ?? page, 10) || 0;
+            const total = parseInt(data.totalElements ?? 0, 10) || 0;
+            const curPage = parseInt(data.number ?? page, 10) || 0;
             const pageSize = parseInt(data.size ?? size, 10)   || size;
-            // 현재 페이지의 첫 번째 행 번호(전역 기준, 정렬: 최신글 우선 가정)
             const pageStartNo = total ? (total - (curPage * pageSize)) : (curPage * pageSize + 1);
 
             if (items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="6" class="meta">게시글이 없습니다.</td></tr>`;
             } else {
                 tbody.innerHTML = items.map((it, idx) => {
-                    // 전역 기준 번호 (total이 없으면 페이지 내부 번호로 대체)
-                    const rowNo = total ? (pageStartNo - idx) : (curPage * pageSize + idx + 1);
+                    const isNotice = it.category === 'NOTICE';
+                    const rowClass = isNotice ? 'notice-row' : '';
+                    const displayNo = isNotice ? '*' : (pageStartNo - idx);
 
-                    const id        = it.id;
-                    const title     = escapeHtml(it.title);
+                    const id = it.id;
+                    const title = escapeHtml(it.title);
                     const categoryV = escapeHtml(it.category || '');
-                    const vis       = String(it.visibility || '').toUpperCase();
-                    const author    = escapeHtml(it.authorNickname || '익명');
-                    const views     = (typeof it.viewCount === 'number') ? it.viewCount : (it.viewCount || 0);
+                    const vis = String(it.visibility || '').toUpperCase();
+                    const author = escapeHtml(it.authorNickname || '익명');
+                    const views = (typeof it.viewCount === 'number') ? it.viewCount : (it.viewCount || 0);
                     const createdAt = fmtDate(it.createdAt);
 
+                    let videoIcon = '';
+                    if (it.conversionStatus === 'COMPLETED') videoIcon = ' 🎥';
+                    else if (it.conversionStatus === 'PROCESSING' || it.conversionStatus === 'UPLOADED') videoIcon = ' ⏳';
+
+                    let tagsHtml = '';
+                    if (it.tags && it.tags.trim()) {
+                        const tags = it.tags.split(',').map(t => t.trim()).filter(Boolean);
+                        tagsHtml = tags.map(t => `<a href="?tag=${encodeURIComponent(t)}" class="tag-pill">#${escapeHtml(t)}</a>`).join('');
+                    }
+                    
+                    const privatePill = vis === 'PRIVATE' ? `<span class="pill private">나만보기</span>` : '';
+
                     return `
-            <tr>
-              <td>${rowNo}</td>
-              <td>
-                <a href="/board/view?id=${encodeURIComponent(id)}">${title}</a>
-                ${categoryV ? ` <span class="pill">${categoryV}</span>` : ''}
-                ${vis === 'PRIVATE' ? ` <span class="pill private">나만보기</span>` : ''}
+            <tr class="${rowClass}">
+              <td>${displayNo}</td>
+              <td class="title-cell">
+                <div class="title-line">
+                    <a href="/board/view?id=${encodeURIComponent(id)}" title="${title}">${title}</a>
+                    <span class="icons">${videoIcon}</span>
+                    <span class="tags">${tagsHtml}</span>
+                    <span class="pills">${privatePill}</span>
+                </div>
               </td>
               <td>${categoryV || '-'}</td>
               <td>${author}</td>
@@ -186,38 +204,14 @@
 
             const totalPages = Math.max(1, parseInt(data.totalPages ?? 1, 10) || 1);
             const cur = Math.min(Math.max(0, parseInt(data.number ?? page, 10) || 0), totalPages - 1);
-
-            const linkTo = (p) => {
-                const sp = new URLSearchParams(location.search);
-                sp.set('page', p);
-                sp.set('size', data.size ?? size);
-                return `?${sp.toString()}`;
-            };
-
-            const prev = document.createElement('a');
-            prev.className = 'page'; prev.textContent = '이전'; prev.href = linkTo(Math.max(0, cur - 1));
-            if (cur === 0) prev.setAttribute('disabled', 'true');
-            pager.appendChild(prev);
-
-            const windowSize = 5;
-            const start = Math.max(0, cur - Math.floor(windowSize/2));
-            const end = Math.min(totalPages - 1, start + windowSize - 1);
-            for (let p = start; p <= end; p++) {
-                const a = document.createElement('a');
-                a.className = 'page' + (p === cur ? ' active' : '');
-                a.textContent = (p + 1);
-                a.href = linkTo(p);
-                pager.appendChild(a);
-            }
-
-            const next = document.createElement('a');
-            next.className = 'page'; next.textContent = '다음'; next.href = linkTo(Math.min(totalPages - 1, cur + 1));
-            if (cur >= totalPages - 1) next.setAttribute('disabled', 'true');
-            pager.appendChild(next);
+            const linkTo = (p) => { const sp = new URLSearchParams(location.search); sp.set('page', p); sp.set('size', data.size ?? size); return `?${sp.toString()}`; };
+            const prev = document.createElement('a'); prev.className = 'page'; prev.textContent = '이전'; prev.href = linkTo(Math.max(0, cur - 1)); if (cur === 0) prev.setAttribute('disabled', 'true'); pager.appendChild(prev);
+            const windowSize = 5; const start = Math.max(0, cur - Math.floor(windowSize/2)); const end = Math.min(totalPages - 1, start + windowSize - 1);
+            for (let p = start; p <= end; p++) { const a = document.createElement('a'); a.className = 'page' + (p === cur ? ' active' : ''); a.textContent = (p + 1); a.href = linkTo(p); pager.appendChild(a); }
+            const next = document.createElement('a'); next.className = 'page'; next.textContent = '다음'; next.href = linkTo(Math.min(totalPages - 1, cur + 1)); if (cur >= totalPages - 1) next.setAttribute('disabled', 'true'); pager.appendChild(next);
 
         } catch (e) {
-            document.getElementById('listBody').innerHTML =
-                `<tr><td colspan="6" class="meta">오류: ${escapeHtml(e.message || e)}</td></tr>`;
+            document.getElementById('listBody').innerHTML = `<tr><td colspan="6" class="meta">오류: ${escapeHtml(e.message || e)}</td></tr>`;
             console.error(e);
         }
     }
@@ -226,9 +220,11 @@
         e.preventDefault();
         const q = document.getElementById('q').value.trim();
         const category = document.getElementById('category').value;
+        const tag = document.getElementById('tag').value.trim();
         const params = new URLSearchParams(location.search);
         if (q) params.set('q', q); else params.delete('q');
         if (category) params.set('category', category); else params.delete('category');
+        if (tag) params.set('tag', tag); else params.delete('tag');
         params.set('page', '0');
         location.search = '?' + params.toString();
     });
@@ -237,7 +233,6 @@
     loadList();
     window.addEventListener('popstate', () => { setFormFromQs(); loadList(); });
 </script>
-
 
 </body>
 </html>

@@ -4,15 +4,22 @@
     <meta charset="utf-8"/>
     <title>게시글 보기</title>
     <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; max-width: 900px; }
         nav { margin-bottom: 16px; }
         nav a { margin-right: 8px; }
-        .title { font-size: 22px; font-weight: 700; margin: 8px 0; }
-        .meta { color:#6b7280; margin-bottom:12px; }
-        .content { white-space: pre-wrap; border:1px solid #e5e7eb; border-radius:12px; padding:16px; }
+        .title { font-size: 24px; font-weight: 700; margin: 8px 0; }
+        .meta { color:#6b7280; margin-bottom:12px; font-size: 14px; }
+        .content { white-space: pre-wrap; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin-top: 16px; line-height: 1.7; }
         #actions a { margin-right: 12px; }
         .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; margin-left:6px; }
         .pill.private { border-color:#ef4444; color:#ef4444; }
+
+        /* === 동영상 및 태그 스타일 추가 === */
+        #video-container { margin-bottom: 16px; background-color: #f0f0f0; border-radius: 12px; overflow: hidden; }
+        #video-container video { display: block; width: 100%; max-height: 500px; background-color: #000; }
+        .status-box { padding: 60px 40px; text-align: center; color: #6b7280; font-size: 18px; }
+        #tags-container { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag-pill { background-color: #f3f4f6; color: #4b5563; padding: 4px 12px; border-radius: 999px; font-size: 14px; }
     </style>
 </head>
 <body>
@@ -25,129 +32,111 @@
 
 <main>
     <div class="title" id="title"></div>
+    <div id="video-container"></div>
     <div class="meta">
         <b id="author"></b><span id="meta"></span>
     </div>
+    <div id="tags-container"></div>
     <div id="content" class="content"></div>
     <div id="actions" style="margin-top:12px;"></div>
     <p style="margin-top:12px;"><a href="/board/list">목록</a></p>
 </main>
 
 <script>
-    const tokenKey = 'accessToken';
-    const getToken = () => localStorage.getItem(tokenKey);
-    const parseJwt = (t) => { try { return JSON.parse(atob(t.split('.')[1])); } catch { return {}; } };
+    // === 개선된 공용 스크립트 ===
+    const accessTokenKey = 'accessToken', refreshTokenKey = 'refreshToken';
+    const getAccessToken = () => localStorage.getItem(accessTokenKey);
+    const logout = () => { localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); alert('세션이 만료되었습니다. 다시 로그인해 주세요.'); location.href = '/login'; };
+    let isRefreshing = false, refreshSubscribers = [];
+    const onRefreshed = (t) => { refreshSubscribers.forEach(c => c(t)); refreshSubscribers = []; };
+    const addRefreshSubscriber = (c) => { refreshSubscribers.push(c); };
+    async function refreshAccessToken() { isRefreshing = true; try { const rt = localStorage.getItem(refreshTokenKey); if (!rt) { logout(); return Promise.reject(new Error('No refresh token')); } const res = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); if (!res.ok) { logout(); return Promise.reject(new Error('Failed to refresh token')); } const { accessToken: newAccessToken } = await res.json(); localStorage.setItem(accessTokenKey, newAccessToken); isRefreshing = false; onRefreshed(newAccessToken); return newAccessToken; } catch (e) { isRefreshing = false; logout(); return Promise.reject(e); } }
+    async function api(path, options = {}) { const makeRequest = async (token) => { const { method = 'GET', headers = {}, body } = options; const h = { ...headers }; if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json'; if (token) h['Authorization'] = 'Bearer ' + token; return fetch(path, { method, headers: h, body }); }; let res = await makeRequest(getAccessToken()); if (res.status === 401) { if (!isRefreshing) { try { const newAccessToken = await refreshAccessToken(); res = await makeRequest(newAccessToken); } catch (error) { throw new Error('Session expired.'); } } else { res = await new Promise((resolve) => { addRefreshSubscriber(async (newAccessToken) => { resolve(await makeRequest(newAccessToken)); }); }); } } if (!res.ok) { let msg = `${res.status} ${res.statusText}`; try { const ct = res.headers.get('content-type') || ''; if (ct.includes('application/json')) { const j = await res.json(); if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`; } else { const t = await res.text(); if (t) msg += `: ${t}`; } } catch {} throw new Error(msg); } const ct = res.headers.get('content-type') || ''; return ct.includes('application/json') ? res.json() : null; }
+    (function headerToggle(){ const t = getAccessToken(); const auth = document.getElementById('authLinks'); const newLink = document.getElementById('newLink'); if (t) { if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; if (newLink) { newLink.href = '/board/new'; newLink.style.display = ''; } } else { if (auth) auth.innerHTML = `<a href="/login">로그인</a> | <a href="/signup">회원가입</a>`; if (newLink) { newLink.href = '/login'; newLink.style.display = 'none'; } } document.addEventListener('click', (e) => { if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); location.reload(); } }); })();
 
-    // ✅ 204/빈 본문 안전한 공통 API
-    async function api(path, { method='GET', headers={}, body, expect='json' } = {}) {
-        const h = new Headers(headers);
-        if (body && !(body instanceof FormData) && !h.has('Content-Type')) {
-            h.set('Content-Type', 'application/json');
-        }
-        const t = getToken(); if (t) h.set('Authorization', 'Bearer ' + t);
-        const res = await fetch(path, { method, headers:h, body });
-
-        if (res.status === 401) {
-            localStorage.removeItem(tokenKey);
-            alert('로그인이 만료되었어요. 다시 로그인해 주세요.');
-            location.href = '/login';
-            throw new Error('Unauthorized');
-        }
-        if (!res.ok) {
-            const msg = await res.text().catch(()=> '');
-            throw new Error(msg || ('HTTP ' + res.status));
-        }
-        if (res.status === 204) return null;
-        const ct  = res.headers.get('content-type') || '';
-        const txt = await res.text();
-        if (!txt) return null;
-        if (expect === 'json' && ct.includes('application/json')) {
-            try { return JSON.parse(txt); } catch { return null; }
-        }
-        return txt;
-    }
-
-    // 헤더 토글 (✅ 로그인 시 새 글 보이도록)
-    (function headerToggle(){
-        const t = getToken();
-        const auth = document.getElementById('authLinks');
-        const newLink = document.getElementById('newLink');
-        if (t) {
-            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
-            if (newLink) { newLink.href = '/board/new'; newLink.style.display = ''; }
-        } else {
-            if (auth) auth.innerHTML = `<a href="/login">로그인</a>`;
-            if (newLink) { newLink.href = '/login'; newLink.style.display = 'none'; }
-        }
-        document.addEventListener('click', (e) => {
-            if (e.target && e.target.id === 'logoutBtn') {
-                e.preventDefault(); localStorage.removeItem(tokenKey); location.reload();
-            }
-        });
-    })();
-
+    // === 페이지 고유 스크립트 ===
     const $ = (s)=>document.querySelector(s);
     const id = new URLSearchParams(location.search).get('id');
-    const fmt = (iso) => iso ? new Date(iso).toLocaleString() : '';
+    const fmt = (iso) => iso ? new Date(iso).toLocaleString('ko-KR') : '-';
+    const escapeHtml = (s)=> (s==null?'':String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'));
 
     async function loadDetail(){
-        const data = await api(`/api/board/${id}`);
-
-        // 화면 세팅
-        document.getElementById('title').textContent = data.title || '';
-        document.getElementById('author').textContent = (data.authorNickname ?? data.author?.nickname ?? '') || '';
-        const category = data.category ?? '';
-        const vis = String(data.visibility || 'PUBLIC').toUpperCase();
-        const visTxt = vis === 'PRIVATE' ? '나만보기' : '전체공개';
-        document.getElementById('meta').innerHTML =
-            ` | 분류: ${category} | 공개: <span class="pill ${vis==='PRIVATE'?'private':''}">${visTxt}</span> | 조회수: ${data.viewCount ?? 0} | 작성: ${fmt(data.createdAt)}`;
-        document.getElementById('content').textContent = data.content || '';
-
-        // 내 사용자 ID: /api/auth/me → 실패 시 JWT uid로 백업
-        let meId = null, roles = [];
         try {
-            const me = await api('/api/auth/me');
-            meId  = me?.id ?? null;
-            roles = me?.roles ?? [];
-        } catch {
-            const t = getToken();
-            if (t) {
-                const payload = parseJwt(t);
-                meId  = payload?.uid ?? null;
-                roles = payload?.roles ?? [];
+            const data = await api(`/api/board/${id}`);
+
+            // 1. 기본 정보 렌더링
+            $('#title').textContent = data.title || '';
+            $('#author').textContent = data.authorNickname || '';
+            const category = data.category || '';
+            const vis = String(data.visibility || 'PUBLIC').toUpperCase();
+            const visTxt = vis === 'PRIVATE' ? '나만보기' : '전체공개';
+            $('#meta').innerHTML = ` | 분류: ${category} | 공개: <span class="pill ${vis==='PRIVATE'?'private':''}">${visTxt}</span> | 조회수: ${data.viewCount ?? 0} | 작성: ${fmt(data.createdAt)}`;
+            $('#content').textContent = data.content || '';
+
+            // 2. 동영상 플레이어 또는 상태 메시지 렌더링
+            const videoContainer = $('#video-container');
+            videoContainer.innerHTML = ''; // 초기화
+            switch (data.conversionStatus) {
+                case 'COMPLETED':
+                    videoContainer.innerHTML = `
+                        <video controls preload="metadata" poster="${escapeHtml(data.thumbnailUrl || '')}">
+                            <source src="${escapeHtml(data.videoUrl)}" type="video/mp4">
+                            브라우저가 비디오 태그를 지원하지 않습니다.
+                        </video>
+                    `;
+                    break;
+                case 'PROCESSING':
+                case 'UPLOADED':
+                    videoContainer.innerHTML = `<div class="status-box">⏳ 3D 모델을 생성하는 중입니다. 잠시 후 새로고침 해주세요.</div>`;
+                    break;
+                case 'FAILED':
+                    videoContainer.innerHTML = `<div class="status-box">❌ 변환에 실패했습니다.</div>`;
+                    break;
             }
-        }
 
-        // 작성자 ID 후보키들
-        const authorId = data.authorId ?? data.userId ?? data.writerId ?? data.author?.id ?? null;
+            // 3. 태그 렌더링
+            const tagsContainer = $('#tags-container');
+            tagsContainer.innerHTML = ''; // 초기화
+            if (data.tags && data.tags.trim()) {
+                const tags = data.tags.split(',').map(tag => tag.trim()).filter(Boolean);
+                if (tags.length > 0) {
+                    tagsContainer.innerHTML = tags.map(tag => `<span class="tag-pill">#${escapeHtml(tag)}</span>`).join('');
+                }
+            }
 
-        // 서버가 내려주면 우선
-        const canEditFlag = data.canEdit === true;
-        const canDeleteFlag = data.canDelete === true;
+            // 4. 수정/삭제 버튼 렌더링
+            const me = getAccessToken() ? await api('/api/auth/me') : null;
+            const meId = me?.id ?? null;
+            const isOwner = !!meId && !!data.authorId && String(meId) === String(data.authorId);
+            const isAdmin = me && Array.isArray(me.roles) && me.roles.includes('ROLE_ADMIN'); // 'ROLE_ADMIN'으로 수정
 
-        const isOwner = !!meId && !!authorId && String(meId) === String(authorId);
-        const isAdmin = Array.isArray(roles) && roles.includes('ADMIN');
+            const actions = $('#actions');
+            actions.innerHTML = '';
 
-        const actions = document.getElementById('actions');
-        actions.innerHTML = '';
+            if (isOwner || isAdmin) { // 관리자일 경우에도 버튼이 보이도록 조건 수정
+                const edit = document.createElement('a');
+                edit.href = `/board/edit?id=${encodeURIComponent(id)}`;
+                edit.textContent = '수정';
 
-        if (getToken() && (canEditFlag || isOwner || isAdmin)) {
-            const edit = document.createElement('a');
-            edit.href = `/board/edit?id=${encodeURIComponent(id)}`;
-            edit.textContent = '수정';
-
-            const del = document.createElement('a');
-            del.href = '#';
-            del.textContent = '삭제';
-            del.addEventListener('click', async (e)=>{
-                e.preventDefault();
-                if (!confirm('삭제하시겠어요?')) return;
-                await api(`/api/board/${id}`, { method:'DELETE' });
-                alert('삭제되었습니다.');
-                setTimeout(()=>{ location.href = '/board/list'; }, 0);
-            });
-
-            actions.append(edit, del);
+                const del = document.createElement('a');
+                del.href = '#';
+                del.textContent = '삭제';
+                del.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    if (!confirm('정말로 삭제하시겠습니까?')) return;
+                    try {
+                        await api(`/api/board/${id}`, { method: 'DELETE' });
+                        alert('삭제되었습니다.');
+                        location.href = '/board/list';
+                    } catch (err) {
+                        alert('삭제 실패: ' + (err.message || err));
+                    }
+                });
+                actions.append(edit, del);
+            }
+        } catch (err) {
+            alert('게시글을 불러오는 데 실패했습니다: ' + (err.message || err));
+            console.error(err);
         }
     }
 

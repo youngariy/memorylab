@@ -1,6 +1,14 @@
 spring:
   application:
     name: memorylab
+  # === Multipart 설정 추가 ===
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 500MB          # 개별 파일 최대 500MB
+      max-request-size: 510MB       # 총 요청 최대 510MB
+      file-size-threshold: 2MB      # 2MB 이상이면 디스크에 임시 저장
+
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
@@ -35,8 +43,13 @@ spring:
 app:
   mail:
     from: ${APP_MAIL_FROM:${SPRING_MAIL_USERNAME:}}
-
-
+  # === 로컬 업로드 및 AI 서버 설정 ===
+  upload:
+    dir: /var/www/uploads/videos/  # 중요: 실제 서버의 파일 저장 경로로 교체
+    resource-handler: /media/**      # 이 URL로 파일에 접근
+  ai-server:
+    url: http://localhost:8081/api/v1/convert # 중요: 실제 AI 서버 주소로 교체
+    secret-key: "YOUR_SUPER_SECRET_KEY_FOR_AI_SERVER" # 중요: AI 서버와 공유할 비밀 키
 
 jwt:
   secret: ${JWT_SECRET}

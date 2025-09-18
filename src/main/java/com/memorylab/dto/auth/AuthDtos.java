@@ -5,10 +5,12 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class AuthDtos {
 
     @Getter
+    @NoArgsConstructor // for JSON deserialization
     public static class RegisterReq {
         @Email @NotBlank private String email;
         @NotBlank private String password;
@@ -31,7 +33,42 @@ public class AuthDtos {
         private String email;
         private String nickname;
         private String name;
-        private boolean emailVerified;     
+        private boolean emailVerified;
+        private List<String> roles;
         private LocalDateTime createdAt;
+    }
+
+    @Getter
+    @Builder
+    public static class LoginRes {
+        private String accessToken;
+        private String refreshToken;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RefreshReq {
+        @NotBlank private String refreshToken;
+    }
+
+    @Getter
+    @Builder
+    public static class RefreshRes {
+        private String accessToken;
+    }
+
+    // === DTOs for new signup flow ===
+    @Getter
+    @NoArgsConstructor
+    public static class SendVerificationCodeReq {
+        @Email @NotBlank private String email;
+    }
+
+    @Getter
+    @NoArgsConstructor
+    public static class VerifyCodeReq {
+        @Email @NotBlank private String email;
+        @NotBlank private String code;
     }
 }

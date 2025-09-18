@@ -59,14 +59,16 @@
                 return;
             }
 
-            const { accessToken } = await res.json();
-            if (!accessToken) {
+            const { accessToken, refreshToken } = await res.json();
+            if (!accessToken || !refreshToken) {
                 messageEl.textContent = '토큰이 없습니다. 관리자에게 문의하세요.';
                 messageEl.style.color = 'red';
                 return;
             }
 
             localStorage.setItem('accessToken', accessToken);
+            localStorage.setItem('refreshToken', refreshToken);
+
             messageEl.textContent = '로그인 성공! 게시판으로 이동합니다.';
             messageEl.style.color = 'green';
             // 잠깐 보여주고 이동

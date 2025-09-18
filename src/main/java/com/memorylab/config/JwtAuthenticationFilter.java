@@ -16,6 +16,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 
 @Component
@@ -43,15 +44,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 Long userId = claims.get("uid", Long.class);
 
                 if (userId != null) {
+                    // === 토큰에서 roles 클레임 추출 ===
+                    @SuppressWarnings("unchecked")
+                    List<String> roles = claims.get("roles", List.class);
+                    if (roles == null) {
+                        roles = List.of(); // roles 클레임이 없는 경우를 대비한 방어 코드
+                    }
+
+                    // === 권한 목록을 SimpleGrantedAuthority로 변환 ===
+                    List<SimpleGrantedAuthority> authorities = roles.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
+
+                    // === 동적으로 생성된 권한으로 인증 토큰 생성 ===
                     var auth = new UsernamePasswordAuthenticationToken(
                             userId,
                             null,
-                            List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                            authorities // 하드코딩된 권한 대신 토큰에서 추출한 권한 사용
                     );
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
-            } catch (JwtException ignored) {
-                // 유효하지 않은 토큰은 무시 (401은 컨트롤러/예외처리기에서)
+            } catch (JwtException e) {
+                // 유효하지 않거나 만료된 토큰 -> 401 Unauthorized 반환
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                response.getWriter().write("{\"error\": \"The access token is invalid or expired.\"}");
+                return; // 필터 체인 중단
             }
         }
 
@@ -92,10 +111,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return true;
         }
 
-        // 3) 공개 인증 API만 패스 (★ me는 스킵 금지)
+        // 3) 공개 인증 API만 패스
         if (uri.equals("/api/auth/login")
                 || uri.equals("/api/auth/register")
-                || uri.equals("/api/auth/verify")) {
+                || uri.equals("/api/auth/verify")
+                || uri.equals("/api/auth/refresh")) { // 재발급 경로 추가
             return true;
         }
 
