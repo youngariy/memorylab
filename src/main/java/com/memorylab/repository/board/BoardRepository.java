@@ -1,4 +1,3 @@
-// src/main/java/com/memorylab/repository/board/BoardRepository.java
 package com.memorylab.repository.board;
 
 import com.memorylab.domain.board.Board;

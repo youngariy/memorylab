@@ -100,16 +100,14 @@ public class BoardService {
     public Page<SummaryRes> list(String q, String category, String tag, Long authorId, Long meId, Pageable pageable) {
         Category cat = Category.parse(category);
 
-        // === 관리자 여부 확인 로직 추가 ===
         boolean isAdmin = false;
         if (meId != null) {
             isAdmin = users.findById(meId)
                            .map(user -> user.getRoles().contains("ROLE_ADMIN"))
                            .orElse(false);
         }
-        // ===============================
 
-        Page<Board> page = boards.search(q, cat, tag, authorId, meId, isAdmin, pageable); // isAdmin 파라미터 전달
+        Page<Board> page = boards.search(q, cat, tag, authorId, meId, isAdmin, pageable);
 
         return page.map(b -> new SummaryRes(
                 b.getId(),
@@ -130,10 +128,8 @@ public class BoardService {
         Board b = boards.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "게시글 없음"));
 
-        // === '나만보기' 글에 대한 관리자 열람 권한 처리 ===
         if (b.getVisibility() == Visibility.PRIVATE) {
             boolean isOwner = (meId != null && b.isAuthor(meId));
-            // 관리자 여부 확인
             boolean isAdmin = (meId != null && users.findById(meId)
                                                     .map(u -> u.getRoles().contains("ROLE_ADMIN"))
                                                     .orElse(false));
@@ -142,7 +138,6 @@ public class BoardService {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN, "비공개 글입니다.");
             }
         }
-        // ===========================================
 
         if (increaseView) b.increaseView();
 

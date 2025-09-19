@@ -16,7 +16,7 @@
         /* === 제목 줄 스타일링 === */
         .title-line {
             display: flex;
-            align-items: flex-start; /* 여러 줄일 수 있는 태그를 위해 start로 정렬 */
+            align-items: center; /* 모든 요소를 수직 중앙 정렬 */
             gap: 6px;
         }
         .title-line a {
@@ -24,9 +24,10 @@
             text-overflow: ellipsis;
             white-space: nowrap;
             flex-grow: 1; /* 제목이 남는 공간을 차지하도록 */
+            min-width: 0; /* flex item이 줄어들 수 있도록 */
         }
-        .title-line .tags, .title-line .pills {
-            white-space: normal; /* 태그와 필은 여러 줄로 표시될 수 있도록 */
+        .title-line .icons, .title-line .tags, .title-line .pills {
+            white-space: nowrap; /* 아이콘과 태그, 필이 줄바꿈되지 않도록 */
             flex-shrink: 0; /* 줄어들지 않도록 */
         }
         /* ======================= */
@@ -38,7 +39,7 @@
         .btn[disabled] { opacity: .5; cursor: not-allowed; }
         .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; }
         .pill.private { border-color:#ef4444; color:#ef4444; }
-        .tag-pill { display: inline-block; background-color: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 999px; font-size: 12px; text-decoration: none; margin-right: 4px; margin-bottom: 4px; }
+        .tag-pill { display: inline-block; background-color: #eef2ff; color: #4338ca; padding: 2px 8px; border-radius: 999px; font-size: 12px; text-decoration: none; margin-right: 4px; }
         .tag-pill:hover { background-color: #e0e7ff; }
 
         .notice-row { background-color: #fefce8; }
@@ -185,7 +186,7 @@
                     return `
             <tr class="${rowClass}">
               <td>${displayNo}</td>
-              <td class="title-cell">
+              <td>
                 <div class="title-line">
                     <a href="/board/view?id=${encodeURIComponent(id)}" title="${title}">${title}</a>
                     <span class="icons">${videoIcon}</span>
