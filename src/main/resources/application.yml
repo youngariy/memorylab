@@ -1,5 +1,5 @@
 server:
-  forward-headers-strategy: framework
+  forward-headers-strategy: native
 
 spring:
   application:
@@ -46,13 +46,24 @@ spring:
 app:
   mail:
     from: ${APP_MAIL_FROM:${SPRING_MAIL_USERNAME:}}
-  # === 로컬 업로드 및 AI 서버 설정 ===
+  # === 파일 저장소 설정 (보안 강화) ===
   upload:
-    dir: /var/www/uploads/videos/  # 중요: 실제 서버의 파일 저장 경로로 교체
-    resource-handler: /media/**      # 이 URL로 파일에 접근
+    root-dir: /var/www/uploads/                     # 중요: 실제 서버의 최상위 파일 저장 경로
+    converted-base-url: /media/converted          # 중요: 외부에서 변환된 파일에 접근하기 위한 URL
+
   ai-server:
-    url: http://localhost:8081/api/v1/convert # 중요: 실제 AI 서버 주소로 교체
+    url: http://localhost:8081/api/v1/convert      # 변환 요청 URL
+    status-url: http://localhost:8081/api/v1/status/{boardId} # 상태 폴링 URL
     secret-key: "YOUR_SUPER_SECRET_KEY_FOR_AI_SERVER" # 중요: AI 서버와 공유할 비밀 키
+    timestamp-validity-sec: 300 # 서명 타임스탬프 유효 시간 (초)
+  # === 스케줄러 설정 ===
+  scheduler:
+    conversion-rate-ms: 30000 # 동영상 변환 스케줄러 실행 주기 (ms)
+    polling-rate-ms: 60000    # 폴링 스케줄러 실행 주기 (ms)
+    stale-threshold-minutes: 5 # 폴링 대상이 될 지연 시간 (분)
+    max-retries: 3            # 최대 재시도 횟수
+    batch-size: 5             # 한 번에 처리할 작업 수
+    concurrency: 3            # 동시 처리 스레드 수
 
 jwt:
   secret: ${JWT_SECRET}
@@ -61,3 +72,26 @@ jwt:
 logging:
   level:
     org.springframework.security: DEBUG
+
+# === Actuator 설정 추가 ===
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*" # 개발 중에는 health, info, metrics, prometheus 등 필요한 것만 선별적으로 노출하세요.
+  metrics:
+    tags:
+      application: ${spring.application.name} # 모든 메트릭에 애플리케이션 이름 태그 추가
+
+# === Resilience4j 서킷 브레이커 설정 ===
+resilience4j.circuitbreaker:
+  instances:
+    ai-server: # 서킷 브레이커 인스턴스 이름
+      failure-rate-threshold: 50 # 실패율 임계값 (50%). 이 비율 이상 실패하면 회로 차단
+      slow-call-duration-threshold: 10s # 10초 이상 걸리는 호출을 느린 호출로 간주
+      slow-call-rate-threshold: 50 # 느린 호출 비율 임계값 (50%). 이 비율 이상이면 회로 차단
+      wait-duration-in-open-state: 60s # 회로가 차단된 상태를 유지하는 시간. 이후 half-open 상태로 전환
+      permitted-number-of-calls-in-half-open-state: 3 # half-open 상태에서 허용할 테스트 호출 수
+      sliding-window-type: COUNT_BASED # 카운트 기반으로 최근 호출 기록
+      sliding-window-size: 10 # 실패율을 계산할 최근 호출의 수
+      minimum-number-of-calls: 5 # 실패율을 계산하기 위한 최소 호출 수

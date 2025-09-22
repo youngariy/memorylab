@@ -1,4 +1,3 @@
-// src/main/java/com/memorylab/domain/board/Board.java
 package com.memorylab.domain.board;
 
 import com.memorylab.domain.user.User;
@@ -8,6 +7,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter @Builder
@@ -15,13 +15,17 @@ import java.time.LocalDateTime;
 @Table(indexes = {
         @Index(name="idx_board_category", columnList="category"),
         @Index(name="idx_board_visibility", columnList="visibility"),
-        @Index(name="idx_board_createdAt", columnList="createdAt DESC")
+        @Index(name="idx_board_createdAt", columnList="createdAt DESC"),
+        @Index(name="idx_board_conversion_status", columnList="conversionStatus")
 })
 public class Board {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    private Long version; // 낙관적 락을 위한 버전 필드
 
     @ManyToOne(optional=false, fetch=FetchType.LAZY)
     private User author;
@@ -42,20 +46,32 @@ public class Board {
     @Column(length = 20, nullable = false)
     private Visibility visibility = Visibility.PUBLIC;
 
-    // === 동영상 및 변환 관련 필드 추가 ===
-    @Column(length = 512) // 로컬 경로이므로 S3 URL보다 짧아도 됨
-    private String videoUrl;
+    // === 동영상 및 변환 관련 필드 ===
+    @Column(length = 512)
+    private String originalVideoPath;
 
     @Column(length = 512)
-    private String thumbnailUrl;
+    private String convertedVideoPath;
+
+    @Column(length = 512)
+    private String thumbnailPath;
+
+    @Column(length = 36)
+    private String jobId; // 변환 작업을 식별하기 위한 고유 ID
 
     @Column(length = 255)
     private String tags;
 
-    @Builder.Default
     @Enumerated(EnumType.STRING)
-    @Column(length = 20, nullable = false)
-    private ConversionStatus conversionStatus = ConversionStatus.NOT_STARTED;
+    @Column(length = 20)
+    private ConversionStatus conversionStatus;
+
+    @Lob
+    private String errorMessage;
+
+    private Integer progress;
+
+    private int retryCount;
     // =====================================
 
     private long viewCount;
@@ -83,20 +99,61 @@ public class Board {
 
     public void updateConversionStatus(ConversionStatus status) {
         this.conversionStatus = status;
+        this.errorMessage = null;
+        if (status == ConversionStatus.PROCESSING) {
+            this.progress = 0;
+        } else {
+            this.progress = null;
+        }
         this.updatedAt = LocalDateTime.now();
     }
 
-    public void updateConversionResult(ConversionStatus status, String thumbnailUrl) {
-        this.conversionStatus = status;
-        this.thumbnailUrl = thumbnailUrl;
+    public void updateOnCompletion(String thumbnailPath, String convertedVideoPath) {
+        this.conversionStatus = ConversionStatus.COMPLETED;
+        this.thumbnailPath = thumbnailPath;
+        this.convertedVideoPath = convertedVideoPath;
+        this.progress = 100;
+        this.errorMessage = null;
+        this.retryCount = 0;
         this.updatedAt = LocalDateTime.now();
     }
 
-    // === 동영상 교체 및 상태 리셋을 위한 메소드 추가 ===
-    public void changeVideo(String newVideoUrl) {
-        this.videoUrl = newVideoUrl;
-        this.thumbnailUrl = null; // 새 영상이므로 기존 썸네일은 무효
-        this.conversionStatus = ConversionStatus.UPLOADED; // 변환 상태 초기화
+    public void updateOnError(String message) {
+        this.conversionStatus = ConversionStatus.ERROR;
+        this.errorMessage = message;
+        this.progress = null;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public void changeVideo(String newOriginalVideoPath) {
+        this.originalVideoPath = newOriginalVideoPath;
+        this.convertedVideoPath = null;
+        this.thumbnailPath = null;
+        this.conversionStatus = ConversionStatus.PENDING;
+        this.progress = null;
+        this.errorMessage = null;
+        this.retryCount = 0;
+        this.jobId = UUID.randomUUID().toString(); // 새 작업이므로 새 Job ID 생성
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void updateProgress(Integer progress) {
+        this.progress = progress;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void resetForRetry() {
+        this.conversionStatus = ConversionStatus.PENDING;
+        this.errorMessage = null;
+        this.progress = null;
+        this.convertedVideoPath = null;
+        this.thumbnailPath = null;
+        this.retryCount = 0;
+        this.jobId = UUID.randomUUID().toString(); // 재시도도 새 Job ID 생성
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void incrementRetryCount() {
+        this.retryCount++;
     }
 }

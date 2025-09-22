@@ -1,12 +1,11 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"/>
     <title>게시글 보기</title>
     <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 24px; max-width: 900px; }
-        nav { margin-bottom: 16px; }
-        nav a { margin-right: 8px; }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
+        main { padding: 10px 24px 24px; max-width: 900px; margin: 0 auto; }
         .title { font-size: 24px; font-weight: 700; margin: 8px 0; }
         .meta { color:#6b7280; margin-bottom:12px; font-size: 14px; }
         .content { white-space: pre-wrap; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin-top: 16px; line-height: 1.7; }
@@ -14,7 +13,6 @@
         .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; margin-left:6px; }
         .pill.private { border-color:#ef4444; color:#ef4444; }
 
-        /* === 동영상 및 태그 스타일 추가 === */
         #video-container { margin-bottom: 16px; background-color: #f0f0f0; border-radius: 12px; overflow: hidden; }
         #video-container video { display: block; width: 100%; max-height: 500px; background-color: #000; }
         .status-box { padding: 60px 40px; text-align: center; color: #6b7280; font-size: 18px; }
@@ -23,12 +21,9 @@
     </style>
 </head>
 <body>
-<nav class="nav">
-    <a href="/">홈</a> |
-    <a href="/board/list">게시판</a> |
-    <a href="#" id="newLink">새 글</a> |
-    <span id="authLinks"></span>
-</nav>
+
+<!-- 공통 헤더 삽입 -->
+<div th:replace="~{fragments/header :: header}"></div>
 
 <main>
     <div class="title" id="title"></div>
@@ -52,7 +47,26 @@
     const addRefreshSubscriber = (c) => { refreshSubscribers.push(c); };
     async function refreshAccessToken() { isRefreshing = true; try { const rt = localStorage.getItem(refreshTokenKey); if (!rt) { logout(); return Promise.reject(new Error('No refresh token')); } const res = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); if (!res.ok) { logout(); return Promise.reject(new Error('Failed to refresh token')); } const { accessToken: newAccessToken } = await res.json(); localStorage.setItem(accessTokenKey, newAccessToken); isRefreshing = false; onRefreshed(newAccessToken); return newAccessToken; } catch (e) { isRefreshing = false; logout(); return Promise.reject(e); } }
     async function api(path, options = {}) { const makeRequest = async (token) => { const { method = 'GET', headers = {}, body } = options; const h = { ...headers }; if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json'; if (token) h['Authorization'] = 'Bearer ' + token; return fetch(path, { method, headers: h, body }); }; let res = await makeRequest(getAccessToken()); if (res.status === 401) { if (!isRefreshing) { try { const newAccessToken = await refreshAccessToken(); res = await makeRequest(newAccessToken); } catch (error) { throw new Error('Session expired.'); } } else { res = await new Promise((resolve) => { addRefreshSubscriber(async (newAccessToken) => { resolve(await makeRequest(newAccessToken)); }); }); } } if (!res.ok) { let msg = `${res.status} ${res.statusText}`; try { const ct = res.headers.get('content-type') || ''; if (ct.includes('application/json')) { const j = await res.json(); if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`; } else { const t = await res.text(); if (t) msg += `: ${t}`; } } catch {} throw new Error(msg); } const ct = res.headers.get('content-type') || ''; return ct.includes('application/json') ? res.json() : null; }
-    (function headerToggle(){ const t = getAccessToken(); const auth = document.getElementById('authLinks'); const newLink = document.getElementById('newLink'); if (t) { if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; if (newLink) { newLink.href = '/board/new'; newLink.style.display = ''; } } else { if (auth) auth.innerHTML = `<a href="/login">로그인</a> | <a href="/signup">회원가입</a>`; if (newLink) { newLink.href = '/login'; newLink.style.display = 'none'; } } document.addEventListener('click', (e) => { if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); location.reload(); } }); })();
+    
+    (function headerToggle(){
+        const t = getAccessToken();
+        const auth = document.getElementById('authLinks');
+        if (auth) {
+            if (t) {
+                auth.innerHTML = `<a href="/profile" style="margin-right: 10px;">내 정보</a><a href="#" id="logoutBtn">로그아웃</a>`;
+            } else {
+                auth.innerHTML = `<a href="/login" style="margin-right: 10px;">로그인</a><a href="/signup">회원가입</a>`;
+            }
+        }
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'logoutBtn') {
+                e.preventDefault();
+                localStorage.removeItem(accessTokenKey);
+                localStorage.removeItem(refreshTokenKey);
+                location.reload();
+            }
+        });
+    })();
 
     // === 페이지 고유 스크립트 ===
     const $ = (s)=>document.querySelector(s);
@@ -65,7 +79,7 @@
             const data = await api(`/api/board/${id}`);
 
             // 1. 기본 정보 렌더링
-            $('#title').textContent = data.title || '';
+            $('title').textContent = data.title || '';
             $('#author').textContent = data.authorNickname || '';
             const category = data.category || '';
             const vis = String(data.visibility || 'PUBLIC').toUpperCase();
@@ -85,11 +99,11 @@
                         </video>
                     `;
                     break;
+                case 'PENDING':
                 case 'PROCESSING':
-                case 'UPLOADED':
-                    videoContainer.innerHTML = `<div class="status-box">⏳ 3D 모델을 생성하는 중입니다. 잠시 후 새로고침 해주세요.</div>`;
+                    videoContainer.innerHTML = `<div class="status-box">⏳ 3D 모델을 생성하는 중입니다. 변환이 완료되면 이메일로 알람이 발송될 예정입니다.</div>`;
                     break;
-                case 'FAILED':
+                case 'ERROR':
                     videoContainer.innerHTML = `<div class="status-box">❌ 변환에 실패했습니다.</div>`;
                     break;
             }
@@ -108,12 +122,12 @@
             const me = getAccessToken() ? await api('/api/auth/me') : null;
             const meId = me?.id ?? null;
             const isOwner = !!meId && !!data.authorId && String(meId) === String(data.authorId);
-            const isAdmin = me && Array.isArray(me.roles) && me.roles.includes('ROLE_ADMIN'); // 'ROLE_ADMIN'으로 수정
+            const isAdmin = me && Array.isArray(me.roles) && me.roles.includes('ROLE_ADMIN');
 
             const actions = $('#actions');
             actions.innerHTML = '';
 
-            if (isOwner || isAdmin) { // 관리자일 경우에도 버튼이 보이도록 조건 수정
+            if (isOwner || isAdmin) {
                 const edit = document.createElement('a');
                 edit.href = `/board/edit?id=${encodeURIComponent(id)}`;
                 edit.textContent = '수정';

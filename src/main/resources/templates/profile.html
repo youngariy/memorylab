@@ -1,13 +1,12 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"/>
     <title>내 정보</title>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; }
-        nav { margin-bottom: 16px; }
-        nav a { margin-right: 8px; }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; }
+        main { padding: 10px 24px 24px 24px; }
         .card { border:1px solid #e5e7eb; border-radius: 12px; padding: 16px; max-width: 960px; box-sizing: border-box; }
         .row  { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; align-items: center; }
         .row:last-child { border-bottom: 0; }
@@ -24,30 +23,28 @@
             border-bottom: 1px solid #eee;
             padding: 8px;
             text-align: left;
-            vertical-align: top; /* vertical-align 추가 */
+            vertical-align: top;
         }
         td { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         th:nth-child(2), td:nth-child(2) {
             width: 50%;
         }
 
-        /* === 제목 줄 스타일링 추가 === */
         .title-line {
             display: flex;
-            align-items: center; /* 한 줄에 정렬 */
+            align-items: center;
             gap: 6px;
         }
         .title-line a {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            flex-grow: 1; /* 제목이 남는 공간을 차지하도록 */
+            flex-grow: 1;
         }
         .title-line .icons, .title-line .pills {
             white-space: nowrap;
             flex-shrink: 0;
         }
-        /* ======================= */
 
         th { background: #fafafa; }
         .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; margin-left: 4px; }
@@ -76,11 +73,8 @@
 </head>
 <body>
 
-<nav>
-    <a href="/">홈</a> |
-    <a href="/board/list">게시판</a> |
-    <span id="authLinks"></span>
-</nav>
+<!-- 공통 헤더 삽입 -->
+<div th:replace="~{fragments/header :: header}"></div>
 
 <main>
     <h1>내 정보</h1>
@@ -121,7 +115,27 @@
     const addRefreshSubscriber = (c) => { refreshSubscribers.push(c); };
     async function refreshAccessToken() { isRefreshing = true; try { const rt = localStorage.getItem(refreshTokenKey); if (!rt) { logout(); return Promise.reject(new Error('No refresh token')); } const res = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); if (!res.ok) { logout(); return Promise.reject(new Error('Failed to refresh token')); } const { accessToken: newAccessToken } = await res.json(); localStorage.setItem(accessTokenKey, newAccessToken); isRefreshing = false; onRefreshed(newAccessToken); return newAccessToken; } catch (e) { isRefreshing = false; logout(); return Promise.reject(e); } }
     async function api(path, options = {}) { const makeRequest = async (token) => { const { method = 'GET', headers = {}, body } = options; const h = { ...headers }; if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json'; if (token) h['Authorization'] = 'Bearer ' + token; return fetch(path, { method, headers: h, body }); }; let res = await makeRequest(getAccessToken()); if (res.status === 401) { if (!isRefreshing) { try { const newAccessToken = await refreshAccessToken(); res = await makeRequest(newAccessToken); } catch (error) { throw new Error('Session expired.'); } } else { res = await new Promise((resolve) => { addRefreshSubscriber(async (newAccessToken) => { resolve(await makeRequest(newAccessToken)); }); }); } } if (!res.ok) { let msg = `${res.status} ${res.statusText}`; try { const ct = res.headers.get('content-type') || ''; if (ct.includes('application/json')) { const j = await res.json(); if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`; } else { const t = await res.text(); if (t) msg += `: ${t}`; } } catch {} throw new Error(msg); } const ct = res.headers.get('content-type') || ''; return ct.includes('application/json') ? res.json() : null; }
-    (function headerToggle(){ const t = getAccessToken(); const auth = document.getElementById('authLinks'); if (t) { auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`; } else { auth.innerHTML = `<a href="/login">로그인</a> | <a href="/signup">회원가입</a>`; } document.addEventListener('click', (e) => { if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); location.href = '/'; } }); })();
+    
+    (function headerToggle(){
+        const t = getAccessToken();
+        const auth = document.getElementById('authLinks');
+        if (auth) {
+            if (t) {
+                auth.innerHTML = `<a href="/profile" style="margin-right: 10px;">내 정보</a><a href="#" id="logoutBtn">로그아웃</a>`;
+            } else {
+                auth.innerHTML = `<a href="/login" style="margin-right: 10px;">로그인</a><a href="/signup">회원가입</a>`;
+            }
+        }
+        document.addEventListener('click', (e) => {
+            if (e.target && e.target.id === 'logoutBtn') {
+                e.preventDefault();
+                localStorage.removeItem(accessTokenKey);
+                localStorage.removeItem(refreshTokenKey);
+                location.href = '/';
+            }
+        });
+    })();
+    
     if (!getAccessToken()) { alert('로그인이 필요합니다.'); location.href = '/login'; }
 
     // === 페이지 고유 스크립트 ===

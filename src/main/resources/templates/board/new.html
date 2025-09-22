@@ -1,13 +1,12 @@
 <!doctype html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"/>
     <title>새 글 작성</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <style>
-        body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin: 24px; max-width: 900px; }
-        nav { margin-bottom: 16px; }
-        nav a { margin-right: 8px; }
+        body { font-family: system-ui,-apple-system,Segoe UI,Roboto,sans-serif; margin: 0; }
+        main { padding: 10px 24px 24px; max-width: 900px; margin: 0 auto; }
         input, select, textarea { width:100%; padding:8px; border:1px solid #e5e7eb; border-radius:8px; box-sizing: border-box; font-size: 16px; }
         textarea { min-height: 180px; }
         .row { margin-bottom: 16px; }
@@ -51,12 +50,9 @@
     </style>
 </head>
 <body>
-<nav class="nav">
-    <a href="/">홈</a> |
-    <a href="/board/list">게시판</a> |
-    <a href="#" id="newLink">새 글</a> |
-    <span id="authLinks"></span>
-</nav>
+
+<!-- 공통 헤더 삽입 -->
+<div th:replace="~{fragments/header :: header}"></div>
 
 <main>
     <h1>새 글 작성</h1>
@@ -129,7 +125,6 @@
     // === 페이지 초기화 로직 (헤더 토글 + 권한 체크) ===
     async function initializePage() {
         const auth = document.getElementById('authLinks');
-        const newLink = document.getElementById('newLink');
 
         if (!getAccessToken()) {
             alert('로그인이 필요합니다.');
@@ -140,8 +135,9 @@
         try {
             const me = await api('/api/auth/me');
             // 로그인된 사용자 UI 설정
-            if (auth) auth.innerHTML = `<a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>`;
-            if (newLink) newLink.href = '/board/new';
+            if (auth) {
+                auth.innerHTML = `<a href="/profile" style="margin-right: 10px;">내 정보</a><a href="#" id="logoutBtn">로그아웃</a>`;
+            }
 
             // === 관리자 권한에 따른 카테고리 옵션 처리 ===
             if (!me.roles || !me.roles.includes('ROLE_ADMIN')) {
@@ -149,14 +145,13 @@
                 if (noticeOption) noticeOption.remove();
             }
         } catch (error) {
-            // api() 함수가 401 오류 시 logout()을 호출하고, 결국 로그인 페이지로 리다이렉트됨
             console.error("Failed to initialize page:", error);
         }
         
         document.addEventListener('click', (e) => {
             if (e.target && e.target.id === 'logoutBtn') {
                 e.preventDefault();
-                logout(); // 로그아웃 함수 사용
+                logout();
             }
         });
     }
@@ -171,9 +166,8 @@
     const f = document.getElementById('f');
     const submitBtn = document.getElementById('submitBtn');
 
-    let selectedFile = null; // 사용자가 선택한 파일 객체
+    let selectedFile = null;
 
-    // 파일 처리 및 유효성 검사 함수
     function handleFile(file) {
         if (!file) return;
         if (file.type !== 'video/mp4') {
@@ -189,7 +183,6 @@
         fileInfo.textContent = `선택된 파일: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
     }
 
-    // Dropzone 이벤트 리스너
     dropzone.addEventListener('click', () => fileInput.click());
     dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('active'); });
     dropzone.addEventListener('dragleave', () => dropzone.classList.remove('active'));
@@ -200,7 +193,6 @@
     });
     fileInput.addEventListener('change', () => handleFile(fileInput.files[0]));
 
-    // 폼 제출 이벤트 리스너 (핵심 로직)
     f.addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -280,7 +272,6 @@
         xhr.send(formData);
     });
 
-    // 페이지 로드 시 초기화 함수 실행
     initializePage();
 </script>
 </body>

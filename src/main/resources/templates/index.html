@@ -6,32 +6,30 @@
     <title>MemoryLab 홈</title>
 </head>
 <body>
-<h1>MemoryLab 홈</h1>
 
-<!-- 홈에서는 게시판만 고정 노출, 로그인/회원가입 or 내정보/로그아웃은 토큰 상태에 따라 토글 -->
-<nav>
-    <a href="/board/list">게시판</a> |
-    <span id="authLinks">
-      <a href="/login">로그인</a> | <a href="/signup">회원가입</a>
-    </span>
-</nav>
+<!-- 공통 헤더 삽입 -->
+<div th:replace="~{fragments/header :: header}"></div>
 
-<p id="status">로그인 상태: 확인 중...</p>
+<main style="padding: 0 20px 20px 20px; padding-top: 10px;">
+    <h1>MemoryLab 홈</h1>
+    <p id="status">로그인 상태: 확인 중...</p>
+</main>
 
 <script>
     const TOKEN_KEY = 'accessToken';
     const token = localStorage.getItem(TOKEN_KEY);
 
-
-    document.getElementById('status').textContent =
-        token ? '로그인 상태: 로그인 중' : '로그인 상태: 미로그인';
-
+    const statusEl = document.getElementById('status');
+    if (statusEl) {
+        statusEl.textContent = token ? '로그인 상태: 로그인 중' : '로그인 상태: 미로그인';
+    }
 
     const authLinks = document.getElementById('authLinks');
-    if (token) {
+    if (token && authLinks) {
         authLinks.innerHTML = `
-        <a href="/profile">내 정보</a> | <a href="#" id="logoutBtn">로그아웃</a>
-      `;
+            <a href="/profile" style="margin-right: 10px;">내 정보</a>
+            <a href="#" id="logoutBtn">로그아웃</a>
+        `;
     }
 
     // 로그아웃 클릭 처리

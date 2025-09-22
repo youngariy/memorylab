@@ -1,14 +1,16 @@
 // src/main/java/com/memorylab/dto/board/BoardDtos.java
 package com.memorylab.dto.board;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
+// null인 필드는 응답에 포함하지 않도록 설정
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class BoardDtos {
 
     // ==== 생성 요청 (tags 추가)====
-    // 동영상 파일은 MultipartFile로 별도 처리되므로 DTO에는 파일 관련 정보가 포함되지 않음
     public record CreateReq(
             @NotBlank @Size(max=120) String title,
             @NotBlank String content,
@@ -26,32 +28,37 @@ public class BoardDtos {
             String tags // 태그 수정
     ) {}
 
-    // ==== 목록 응답 (tags 필드 추가)====
+    // ==== 목록 응답 (progress, errorMessage 필드 추가)====
     public record SummaryRes(
             Long id,
             String title,
             String category,
             String visibility,
-            String thumbnailUrl,     // 썸네일 URL
-            String conversionStatus, // 변환 상태
-            String tags,             // 태그 필드 추가
+            String thumbnailUrl,
+            String conversionStatus,
+            Integer progress, // 변환 진행률 (0-100)
+            String errorMessage,
+            String tags,
             long viewCount,
             LocalDateTime createdAt,
             String authorNickname
     ) {}
 
 
-    // ==== 상세 응답 (동영상 정보 추가)====
+    // ==== 상세 응답 (originalVideoUrl 필드 제거)====
     public record DetailRes(
             Long id,
             String title,
             String content,
             String category,
             String visibility,
-            String videoUrl,         // 원본 동영상 URL
-            String thumbnailUrl,     // 썸네일 URL
-            String tags,             // 태그
-            String conversionStatus, // 변환 상태
+            // String originalVideoUrl, // 원본 URL은 외부에 노출하지 않음
+            String convertedVideoUrl,
+            String thumbnailUrl,
+            String tags,
+            String conversionStatus,
+            Integer progress, // 변환 진행률 (0-100)
+            String errorMessage,
             long viewCount,
             LocalDateTime createdAt,
             LocalDateTime updatedAt,

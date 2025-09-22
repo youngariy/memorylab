@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <title>회원가입</title>
     <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; flex-direction: column; background-color: #f8f9fa; }
-        .signup-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px; position: relative; }
-        .home-link { position: absolute; top: 15px; left: 15px; text-decoration: none; font-size: 24px; }
+        body { font-family: sans-serif; background-color: #f8f9fa; margin: 0; }
+        main { display: flex; justify-content: center; align-items: center; flex-direction: column; padding: 20px; }
+        .signup-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px; }
         h1 { text-align: center; margin-bottom: 24px; }
         .form-group { margin-bottom: 20px; }
         label { display: block; margin-bottom: 5px; font-weight: 600; }
@@ -20,74 +20,77 @@
         .feedback { font-size: 12px; margin-top: 4px; min-height: 1em; }
         .feedback.success { color: #28a745; }
         .feedback.error { color: #dc3545; }
-        #email-verification-section { display: none; } /* 기본적으로 숨김 */
+        #email-verification-section { display: none; }
     </style>
 </head>
 <body>
 
-<div class="signup-container">
-    <a href="/" class="home-link" title="홈으로">🏠</a>
-    <h1>회원가입</h1>
-    <form id="signup-form" novalidate>
-        <!-- 이메일 -->
-        <div class="form-group">
-            <label for="email">이메일</label>
-            <div class="input-group">
-                <input type="email" id="email" required>
-                <button type="button" id="check-email-btn" class="btn btn-check">중복 확인</button>
+<!-- 공통 헤더 삽입 -->
+<div th:replace="~{fragments/header :: header}"></div>
+
+<main>
+    <div class="signup-container">
+        <h1>회원가입</h1>
+        <form id="signup-form" novalidate>
+            <!-- 이메일 -->
+            <div class="form-group">
+                <label for="email">이메일</label>
+                <div class="input-group">
+                    <input type="email" id="email" required>
+                    <button type="button" id="check-email-btn" class="btn btn-check">중복 확인</button>
+                </div>
+                <div id="email-feedback" class="feedback"></div>
             </div>
-            <div id="email-feedback" class="feedback"></div>
-        </div>
 
-        <!-- 닉네임 -->
-        <div class="form-group">
-            <label for="nickname">닉네임</label>
-            <div class="input-group">
-                <input type="text" id="nickname" required>
-                <button type="button" id="check-nickname-btn" class="btn btn-check">중복 확인</button>
+            <!-- 닉네임 -->
+            <div class="form-group">
+                <label for="nickname">닉네임</label>
+                <div class="input-group">
+                    <input type="text" id="nickname" required>
+                    <button type="button" id="check-nickname-btn" class="btn btn-check">중복 확인</button>
+                </div>
+                <div id="nickname-feedback" class="feedback"></div>
             </div>
-            <div id="nickname-feedback" class="feedback"></div>
-        </div>
 
-        <!-- 이름 -->
-        <div class="form-group">
-            <label for="name">이름</label>
-            <input type="text" id="name" required>
-        </div>
-
-        <!-- 비밀번호 -->
-        <div class="form-group">
-            <label for="password">비밀번호</label>
-            <input type="password" id="password" required>
-        </div>
-
-        <!-- 비밀번호 확인 -->
-        <div class="form-group">
-            <label for="password-confirm">비밀번호 확인</label>
-            <input type="password" id="password-confirm" required>
-            <div id="password-feedback" class="feedback"></div>
-        </div>
-
-        <!-- 이메일 인증 섹션 -->
-        <div class="form-group" id="email-verification-section">
-            <button type="button" id="send-code-btn" class="btn btn-send" disabled>인증번호 발송</button>
-            <div class="input-group" id="code-input-group" style="display:none; margin-top: 10px;">
-                <input type="text" id="verification-code" placeholder="인증번호 6자리">
-                <span id="timer" style="align-self: center; margin: 0 10px; font-weight: bold;">5:00</span>
-                <button type="button" id="verify-code-btn" class="btn btn-check">인증 확인</button>
+            <!-- 이름 -->
+            <div class="form-group">
+                <label for="name">이름</label>
+                <input type="text" id="name" required>
             </div>
-            <div id="verification-feedback" class="feedback"></div>
-        </div>
 
-        <!-- 최종 제출 -->
-        <button type="submit" id="submit-btn" class="btn btn-submit" disabled>회원가입</button>
-    </form>
-</div>
+            <!-- 비밀번호 -->
+            <div class="form-group">
+                <label for="password">비밀번호</label>
+                <input type="password" id="password" required>
+            </div>
+
+            <!-- 비밀번호 확인 -->
+            <div class="form-group">
+                <label for="password-confirm">비밀번호 확인</label>
+                <input type="password" id="password-confirm" required>
+                <div id="password-feedback" class="feedback"></div>
+            </div>
+
+            <!-- 이메일 인증 섹션 -->
+            <div class="form-group" id="email-verification-section">
+                <button type="button" id="send-code-btn" class="btn btn-send" disabled>인증번호 발송</button>
+                <div class="input-group" id="code-input-group" style="display:none; margin-top: 10px;">
+                    <input type="text" id="verification-code" placeholder="인증번호 6자리">
+                    <span id="timer" style="align-self: center; margin: 0 10px; font-weight: bold;">5:00</span>
+                    <button type="button" id="verify-code-btn" class="btn btn-check">인증 확인</button>
+                </div>
+                <div id="verification-feedback" class="feedback"></div>
+            </div>
+
+            <!-- 최종 제출 -->
+            <button type="submit" id="submit-btn" class="btn btn-submit" disabled>회원가입</button>
+        </form>
+    </div>
+</main>
 
 <script>
+    // --- Signup form script ---
     const $ = (selector) => document.querySelector(selector);
-
-    // --- DOM Elements ---
     const emailInput = $('#email'), nicknameInput = $('#nickname');
     const passwordInput = $('#password'), passwordConfirmInput = $('#password-confirm');
     const checkEmailBtn = $('#check-email-btn'), checkNicknameBtn = $('#check-nickname-btn');
@@ -97,7 +100,6 @@
     const emailVerificationSection = $('#email-verification-section'), codeInputGroup = $('#code-input-group');
     const timerEl = $('#timer');
 
-    // --- State Management ---
     let timerInterval;
     const validationState = {
         emailAvailable: false,
@@ -116,8 +118,6 @@
         element.textContent = message;
         element.className = 'feedback ' + (isSuccess ? 'success' : 'error');
     }
-
-    // --- Event Listeners ---
 
     emailInput.addEventListener('input', () => {
         validationState.emailAvailable = false;
@@ -162,10 +162,7 @@
             const res = await fetch(`/api/auth/check-email?email=${encodeURIComponent(email)}`);
             if (!res.ok) {
                 let errorMsg = '이미 사용 중인 이메일입니다.';
-                try { 
-                    const errorBody = await res.json(); 
-                    errorMsg = errorBody.message || errorMsg; 
-                } catch(e){}
+                try { const errorBody = await res.json(); errorMsg = errorBody.message || errorMsg; } catch(e){}
                 throw new Error(errorMsg);
             }
             setFeedback(emailFeedback, '사용 가능한 이메일입니다.', true);
@@ -189,10 +186,7 @@
             const res = await fetch(`/api/auth/check-nickname?nickname=${encodeURIComponent(nickname)}`);
             if (!res.ok) {
                 let errorMsg = '이미 사용 중인 닉네임입니다.';
-                try { 
-                    const errorBody = await res.json(); 
-                    errorMsg = errorBody.message || errorMsg; 
-                } catch(e){}
+                try { const errorBody = await res.json(); errorMsg = errorBody.message || errorMsg; } catch(e){}
                 throw new Error(errorMsg);
             }
             setFeedback(nicknameFeedback, '사용 가능한 닉네임입니다.', true);
@@ -286,17 +280,33 @@
                 });
                 if (!res.ok) {
                     let errorMsg = '회원가입에 실패했습니다.';
-                    try { 
-                        const errorBody = await res.json(); 
-                        errorMsg = errorBody.message || errorMsg; 
-                    } catch(e){}
+                    try { const errorBody = await res.json(); errorMsg = errorBody.message || errorMsg; } catch(e){}
                     throw new Error(errorMsg);
                 }
                 alert('회원가입이 성공적으로 완료되었습니다! 로그인 페이지로 이동합니다.');
-                window.location.href = '/login.html';
+                window.location.href = '/login';
             } catch (err) {
                 alert('회원가입 중 오류가 발생했습니다: ' + err.message);
             }
+        }
+    });
+
+    // --- Header auth links script ---
+    const TOKEN_KEY = 'accessToken';
+    const token = localStorage.getItem(TOKEN_KEY);
+    const authLinks = document.getElementById('authLinks');
+    if (token && authLinks) {
+        authLinks.innerHTML = `
+            <a href="/profile" style="margin-right: 10px;">내 정보</a>
+            <a href="#" id="logoutBtn">로그아웃</a>
+        `;
+    }
+
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'logoutBtn') {
+            e.preventDefault();
+            localStorage.removeItem(TOKEN_KEY);
+            location.reload();
         }
     });
 </script>

@@ -36,6 +36,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 정적 리소스 허용
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                        .requestMatchers("/img/**", "/css/**", "/js/**").permitAll()
 
                         // 서버 렌더링 페이지 공개
                         .requestMatchers("/", "/index", "/login", "/signup", "/profile",
