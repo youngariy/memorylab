@@ -1,53 +1,171 @@
+<!-- templates/board/view.html -->
 <!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"/>
     <title>게시글 보기</title>
     <style>
-        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
-        main { padding: 10px 24px 24px; max-width: 900px; margin: 0 auto; }
-        .title { font-size: 24px; font-weight: 700; margin: 8px 0; }
-        .meta { color:#6b7280; margin-bottom:12px; font-size: 14px; }
-        .content { white-space: pre-wrap; border:1px solid #e5e7eb; border-radius:12px; padding:16px; margin-top: 16px; line-height: 1.7; }
-        #actions a { margin-right: 12px; }
+        body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background-color: #f8f9fa; }
+        main { padding: 10px 24px 24px; max-width: 900px; margin: 0 auto; background-color: #fff; border: 1px solid #dee2e6; border-radius: 8px; }
+        .title { font-size: 28px; font-weight: 700; margin: 16px 0; }
+        .content { white-space: pre-wrap; border-top:1px solid #e5e7eb; padding-top: 24px; margin-top: 24px; line-height: 1.7; font-size: 16px; }
+        #actions a { margin-right: 12px; color: #495057; text-decoration: none; }
+        #actions a:hover { text-decoration: underline; }
+
+        /* 메타 정보 및 좋아요 버튼 */
+        .meta-container { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; }
+        .meta { color:#6b7280; font-size: 14px; }
         .pill { padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; margin-left:6px; }
         .pill.private { border-color:#ef4444; color:#ef4444; }
 
-        #video-container { margin-bottom: 16px; background-color: #f0f0f0; border-radius: 12px; overflow: hidden; }
+        .like-button { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 12px; border-radius: 8px; border: 1px solid #ced4da; background-color: #fff; transition: all 0.2s; }
+        .like-button:hover { background-color: #f1f3f5; }
+        .like-button.liked { border-color: #fa5252; background-color: #fff5f5; }
+        .like-button.liked .like-icon { color: #fa5252; }
+        .like-icon { font-size: 20px; color: #adb5bd; }
+        .like-count { font-size: 16px; font-weight: 600; color: #495057; }
+
+        /* 동영상 */
+        #video-container { margin-top: 24px; background-color: #f0f0f0; border-radius: 12px; overflow: hidden; }
         #video-container video { display: block; width: 100%; max-height: 500px; background-color: #000; }
         .status-box { padding: 60px 40px; text-align: center; color: #6b7280; font-size: 18px; }
-        #tags-container { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
-        .tag-pill { background-color: #f3f4f6; color: #4b5563; padding: 4px 12px; border-radius: 999px; font-size: 14px; }
+
+        /* 댓글 섹션 */
+        #comment-section { margin-top: 40px; border-top: 1px solid #dee2e6; padding-top: 24px; }
+        #comment-section h3 { font-size: 20px; margin-bottom: 16px; }
+        #comment-form textarea { width: 100%; min-height: 80px; padding: 12px; border: 1px solid #ced4da; border-radius: 8px; resize: vertical; }
+        #comment-form button { display: block; margin-left: auto; margin-top: 8px; padding: 8px 16px; background-color: #111; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+        #comment-form button:disabled { background-color: #adb5bd; cursor: not-allowed; }
+        #comment-list { margin-bottom: 24px; }
+        .comment-item { display: flex; gap: 12px; padding: 16px 0; border-bottom: 1px solid #f1f3f5; }
+        .comment-item:last-child { border-bottom: none; }
+        .comment-author { font-weight: 600; margin-bottom: 4px; }
+        .comment-content { flex-grow: 1; }
+        .comment-meta { font-size: 12px; color: #868e96; }
+        .comment-actions button { font-size: 12px; cursor: pointer; background: none; border: none; padding: 0; margin-left: 8px; }
+        .comment-actions .comment-edit-btn { color: #495057; }
+        .comment-actions .comment-delete-btn { color: #fa5252; }
     </style>
 </head>
 <body>
 
-<!-- 공통 헤더 삽입 -->
 <div th:replace="~{fragments/header :: header}"></div>
 
 <main>
-    <div class="title" id="title"></div>
-    <div id="video-container"></div>
-    <div class="meta">
-        <b id="author"></b><span id="meta"></span>
+    <h1 class="title" id="title"></h1>
+    <div class="meta-container">
+        <div class="meta">
+            <b id="author"></b><span id="meta-info"></span>
+        </div>
+        <button id="likeBtn" class="like-button" style="display: none;">
+            <span class="like-icon">♥</span>
+            <span id="likeCount" class="like-count">0</span>
+        </button>
     </div>
-    <div id="tags-container"></div>
+    <div id="video-container"></div>
     <div id="content" class="content"></div>
-    <div id="actions" style="margin-top:12px;"></div>
-    <p style="margin-top:12px;"><a href="/board/list">목록</a></p>
+    <div id="actions" style="margin-top:24px;"></div>
+    <p style="margin-top:12px;"><a href="/board/list">목록으로</a></p>
+
+    <!-- 댓글 섹션 -->
+    <section id="comment-section">
+        <h3 id="comment-count-header">댓글 0개</h3>
+        <div id="comment-list"></div>
+        <form id="comment-form">
+            <textarea id="comment-content" placeholder="댓글을 입력하세요..." required></textarea>
+            <button type="submit">등록</button>
+        </form>
+    </section>
 </main>
 
 <script>
-    // === 개선된 공용 스크립트 ===
-    const accessTokenKey = 'accessToken', refreshTokenKey = 'refreshToken';
+    /* ============================
+       공용 유틸 / 인증 토큰 처리
+       ============================ */
+    const accessTokenKey = 'accessToken';
+    const refreshTokenKey = 'refreshToken';
+
     const getAccessToken = () => localStorage.getItem(accessTokenKey);
-    const logout = () => { localStorage.removeItem(accessTokenKey); localStorage.removeItem(refreshTokenKey); alert('세션이 만료되었습니다. 다시 로그인해 주세요.'); location.href = '/login'; };
-    let isRefreshing = false, refreshSubscribers = [];
-    const onRefreshed = (t) => { refreshSubscribers.forEach(c => c(t)); refreshSubscribers = []; };
-    const addRefreshSubscriber = (c) => { refreshSubscribers.push(c); };
-    async function refreshAccessToken() { isRefreshing = true; try { const rt = localStorage.getItem(refreshTokenKey); if (!rt) { logout(); return Promise.reject(new Error('No refresh token')); } const res = await fetch('/api/auth/refresh', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ refreshToken: rt }) }); if (!res.ok) { logout(); return Promise.reject(new Error('Failed to refresh token')); } const { accessToken: newAccessToken } = await res.json(); localStorage.setItem(accessTokenKey, newAccessToken); isRefreshing = false; onRefreshed(newAccessToken); return newAccessToken; } catch (e) { isRefreshing = false; logout(); return Promise.reject(e); } }
-    async function api(path, options = {}) { const makeRequest = async (token) => { const { method = 'GET', headers = {}, body } = options; const h = { ...headers }; if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json'; if (token) h['Authorization'] = 'Bearer ' + token; return fetch(path, { method, headers: h, body }); }; let res = await makeRequest(getAccessToken()); if (res.status === 401) { if (!isRefreshing) { try { const newAccessToken = await refreshAccessToken(); res = await makeRequest(newAccessToken); } catch (error) { throw new Error('Session expired.'); } } else { res = await new Promise((resolve) => { addRefreshSubscriber(async (newAccessToken) => { resolve(await makeRequest(newAccessToken)); }); }); } } if (!res.ok) { let msg = `${res.status} ${res.statusText}`; try { const ct = res.headers.get('content-type') || ''; if (ct.includes('application/json')) { const j = await res.json(); if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`; } else { const t = await res.text(); if (t) msg += `: ${t}`; } } catch {} throw new Error(msg); } const ct = res.headers.get('content-type') || ''; return ct.includes('application/json') ? res.json() : null; }
-    
+    const logout = () => {
+        localStorage.removeItem(accessTokenKey);
+        localStorage.removeItem(refreshTokenKey);
+        alert('세션이 만료되었습니다. 다시 로그인해 주세요.');
+        location.href = '/login';
+    };
+
+    let isRefreshing = false;
+    let refreshSubscribers = [];
+    const onRefreshed = (t) => { refreshSubscribers.forEach(cb => cb(t)); refreshSubscribers = []; };
+    const addRefreshSubscriber = (cb) => { refreshSubscribers.push(cb); };
+
+    async function refreshAccessToken() {
+        isRefreshing = true;
+        try {
+            const rt = localStorage.getItem(refreshTokenKey);
+            if (!rt) { logout(); throw new Error('No refresh token'); }
+            const res = await fetch('/api/auth/refresh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ refreshToken: rt }),
+            });
+            if (!res.ok) { logout(); throw new Error('Failed to refresh token'); }
+            const { accessToken: newAccessToken } = await res.json();
+            localStorage.setItem(accessTokenKey, newAccessToken);
+            isRefreshing = false;
+            onRefreshed(newAccessToken);
+            return newAccessToken;
+        } catch (e) {
+            isRefreshing = false;
+            throw e;
+        }
+    }
+
+    async function api(path, options = {}) {
+        const makeRequest = async (token) => {
+            const { method = 'GET', headers = {}, body } = options;
+            const h = { ...headers };
+            if (body && !('Content-Type' in h)) h['Content-Type'] = 'application/json';
+            if (token) h['Authorization'] = 'Bearer ' + token;
+            return fetch(path, { method, headers: h, body });
+        };
+
+        let res = await makeRequest(getAccessToken());
+
+        if (res.status === 401) {
+            if (!isRefreshing) {
+                try {
+                    const newAccessToken = await refreshAccessToken();
+                    res = await makeRequest(newAccessToken);
+                } catch {
+                    logout(); throw new Error('Session expired.');
+                }
+            } else {
+                res = await new Promise((resolve) => {
+                    addRefreshSubscriber(async (newAccessToken) => resolve(await makeRequest(newAccessToken)));
+                });
+            }
+        }
+
+        if (!res.ok) {
+            let msg = `${res.status} ${res.statusText}`;
+            try {
+                const ct = res.headers.get('content-type') || '';
+                if (ct.includes('application/json')) {
+                    const j = await res.json();
+                    if (j && (j.message || j.error)) msg += `: ${j.message || j.error}`;
+                } else {
+                    const t = await res.text();
+                    if (t) msg += `: ${t}`;
+                }
+            } catch {}
+            throw new Error(msg);
+        }
+
+        const ct = res.headers.get('content-type') || '';
+        return ct.includes('application/json') ? res.json() : null;
+    }
+
+    // 헤더 로그인/로그아웃 토글
     (function headerToggle(){
         const t = getAccessToken();
         const auth = document.getElementById('authLinks');
@@ -63,98 +181,263 @@
                 e.preventDefault();
                 localStorage.removeItem(accessTokenKey);
                 localStorage.removeItem(refreshTokenKey);
-                location.reload();
+                location.href = '/';
             }
         });
     })();
 
-    // === 페이지 고유 스크립트 ===
+    /* ============================
+       페이지 전용 스크립트
+       ============================ */
     const $ = (s)=>document.querySelector(s);
-    const id = new URLSearchParams(location.search).get('id');
+    const boardId = new URLSearchParams(location.search).get('id');
+
     const fmt = (iso) => iso ? new Date(iso).toLocaleString('ko-KR') : '-';
-    const escapeHtml = (s)=> (s==null?'':String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'));
+    const escapeHtml = (s)=> (s==null?'':String(s)
+            .replaceAll('&','&amp;').replaceAll('<','&lt;')
+            .replaceAll('>','&gt;').replaceAll('"','&quot;')
+            .replaceAll("'",'&#39;')
+    );
+
+    let currentUserId = null;
+    let currentUserIsAdmin = false;
 
     async function loadDetail(){
         try {
-            const data = await api(`/api/board/${id}`);
+            // 로그인 사용자 정보
+            const me = getAccessToken() ? await api('/api/auth/me') : null;
+            currentUserId = me?.id || null;
+            currentUserIsAdmin = !!(me?.roles?.includes('ROLE_ADMIN'));
 
-            // 1. 기본 정보 렌더링
-            $('title').textContent = data.title || '';
+            // 게시글 상세
+            const data = await api(`/api/board/${boardId}`);
+
+            // 제목/메타/본문
+            $('#title').textContent = data.title || '';
+            document.title = (data.title || '게시글 보기') + ' - MemoryLab';
             $('#author').textContent = data.authorNickname || '';
-            const category = data.category || '';
-            const vis = String(data.visibility || 'PUBLIC').toUpperCase();
-            const visTxt = vis === 'PRIVATE' ? '나만보기' : '전체공개';
-            $('#meta').innerHTML = ` | 분류: ${category} | 공개: <span class="pill ${vis==='PRIVATE'?'private':''}">${visTxt}</span> | 조회수: ${data.viewCount ?? 0} | 작성: ${fmt(data.createdAt)}`;
+            $('#meta-info').innerHTML =
+                ` | ${data.category || ''} | ${data.visibility === 'PRIVATE' ? '나만보기' : '전체공개'} | 조회 ${data.viewCount} | ${fmt(data.createdAt)}`;
             $('#content').textContent = data.content || '';
 
-            // 2. 동영상 플레이어 또는 상태 메시지 렌더링
+            // 썸네일/비디오
+            const DEFAULT_THUMB = '/thumbnails/default.jpg';
+            const thumbUrl = (data.thumbnailStatus === 'READY' && data.thumbnailUrl) ? data.thumbnailUrl : DEFAULT_THUMB;
+            const posterThumb = thumbUrl;
             const videoContainer = $('#video-container');
-            videoContainer.innerHTML = ''; // 초기화
-            switch (data.conversionStatus) {
-                case 'COMPLETED':
-                    videoContainer.innerHTML = `
-                        <video controls preload="metadata" poster="${escapeHtml(data.thumbnailUrl || '')}">
-                            <source src="${escapeHtml(data.videoUrl)}" type="video/mp4">
-                            브라우저가 비디오 태그를 지원하지 않습니다.
-                        </video>
-                    `;
-                    break;
-                case 'PENDING':
-                case 'PROCESSING':
-                    videoContainer.innerHTML = `<div class="status-box">⏳ 3D 모델을 생성하는 중입니다. 변환이 완료되면 이메일로 알람이 발송될 예정입니다.</div>`;
-                    break;
-                case 'ERROR':
-                    videoContainer.innerHTML = `<div class="status-box">❌ 변환에 실패했습니다.</div>`;
-                    break;
-            }
 
-            // 3. 태그 렌더링
-            const tagsContainer = $('#tags-container');
-            tagsContainer.innerHTML = ''; // 초기화
-            if (data.tags && data.tags.trim()) {
-                const tags = data.tags.split(',').map(tag => tag.trim()).filter(Boolean);
-                if (tags.length > 0) {
-                    tagsContainer.innerHTML = tags.map(tag => `<span class="tag-pill">#${escapeHtml(tag)}</span>`).join('');
+            if (data.transcodeStatus && data.transcodeStatus !== 'NONE') {
+                switch (data.transcodeStatus) {
+                    case 'PENDING':
+                    case 'PROCESSING':
+                        videoContainer.innerHTML = `<div class="status-box">⏳ 동영상을 변환하고 있습니다. 잠시 후 새로고침 해주세요.</div>`;
+                        break;
+                    case 'COMPLETED':
+                        if (data.convertedVideoPath) {
+                            videoContainer.innerHTML = `<video controls preload="metadata" src="${data.convertedVideoPath}" poster="${posterThumb}" style="width:100%; max-height:500px; display:block; background:#000; border-radius:12px;"></video>`;
+                        } else {
+                            videoContainer.innerHTML = '<div class="status-box">✅ 변환은 완료되었으나, 동영상 경로를 찾을 수 없습니다.</div>';
+                        }
+                        break;
+                    case 'FAILED':
+                        videoContainer.innerHTML = '<div class="status-box">❌ 동영상 변환에 실패했습니다.</div>';
+                        break;
+                    default:
+                        videoContainer.innerHTML = `<img id="detail-thumb" src="${posterThumb}" alt="thumbnail" style="width:100%; border-radius:12px; display:block;">`;
+                        document.getElementById('detail-thumb').addEventListener('error', (e) => { e.target.src = DEFAULT_THUMB; }, { once: true });
                 }
+            } else {
+                videoContainer.innerHTML = `<img id="detail-thumb" src="${posterThumb}" alt="thumbnail" style="width:100%; border-radius:12px; display:block;">`;
+                document.getElementById('detail-thumb').addEventListener('error', (e) => { e.target.src = DEFAULT_THUMB; }, { once: true });
             }
 
-            // 4. 수정/삭제 버튼 렌더링
-            const me = getAccessToken() ? await api('/api/auth/me') : null;
-            const meId = me?.id ?? null;
-            const isOwner = !!meId && !!data.authorId && String(meId) === String(data.authorId);
-            const isAdmin = me && Array.isArray(me.roles) && me.roles.includes('ROLE_ADMIN');
+            // 좋아요 버튼 초기화
+            const likeButton = $('#likeBtn');
+            likeButton.querySelector('#likeCount').textContent = data.likeCount ?? 0;
+            likeButton.classList.toggle('liked', !!data.isLikedByCurrentUser);
+            likeButton.style.display = 'flex';
 
-            const actions = $('#actions');
-            actions.innerHTML = '';
+            // 댓글 개수 헤더
+            $('#comment-count-header').textContent = `댓글 ${data.commentCount ?? 0}개`;
 
-            if (isOwner || isAdmin) {
-                const edit = document.createElement('a');
-                edit.href = `/board/edit?id=${encodeURIComponent(id)}`;
-                edit.textContent = '수정';
+            // 댓글 작성 가능 여부
+            const commentForm = $('#comment-form');
+            const commentTextarea = $('#comment-content');
+            if (!me) {
+                commentTextarea.placeholder = '로그인 후 댓글을 작성할 수 있습니다.';
+                commentTextarea.disabled = true;
+                commentForm.querySelector('button').disabled = true;
+            } else {
+                commentTextarea.placeholder = '댓글을 입력하세요...';
+                commentTextarea.disabled = false;
+                commentForm.querySelector('button').disabled = false;
+            }
 
-                const del = document.createElement('a');
-                del.href = '#';
-                del.textContent = '삭제';
-                del.addEventListener('click', async (e) => {
+            // 수정/삭제 버튼 (작성자 또는 관리자)
+            if (me && (me.id === data.authorId || currentUserIsAdmin)) {
+                const actions = $('#actions');
+                actions.innerHTML = `<a href="/board/edit?id=${boardId}">수정</a><a href="#" id="deleteBtn">삭제</a>`;
+                $('#deleteBtn').addEventListener('click', async (e) => {
                     e.preventDefault();
-                    if (!confirm('정말로 삭제하시겠습니까?')) return;
+                    if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) return;
                     try {
-                        await api(`/api/board/${id}`, { method: 'DELETE' });
+                        await api(`/api/board/${boardId}`, { method: 'DELETE' });
                         alert('삭제되었습니다.');
                         location.href = '/board/list';
                     } catch (err) {
                         alert('삭제 실패: ' + (err.message || err));
                     }
                 });
-                actions.append(edit, del);
             }
+
+            // 댓글 목록 로드
+            loadComments();
         } catch (err) {
             alert('게시글을 불러오는 데 실패했습니다: ' + (err.message || err));
-            console.error(err);
         }
     }
 
-    document.addEventListener('DOMContentLoaded', loadDetail);
+    async function loadComments() {
+        const commentListContainer = $('#comment-list');
+        try {
+            const data = await api(`/api/board/${boardId}/comments`);
+            const comments = data.content || [];
+            if (comments.length === 0) {
+                commentListContainer.innerHTML = '<p style="text-align: center; color: #868e96; padding: 20px 0;">아직 댓글이 없습니다.</p>';
+            } else {
+                commentListContainer.innerHTML = comments.map(comment => {
+                    const canModify = currentUserIsAdmin || (currentUserId && currentUserId === comment.authorId);
+                    const buttons = canModify
+                        ? `<button class="comment-edit-btn" data-comment-id="${comment.id}" data-comment-content="${escapeHtml(comment.content)}">수정</button>
+                           <button class="comment-delete-btn" data-comment-id="${comment.id}">삭제</button>`
+                        : '';
+
+                    return `
+                      <div class="comment-item" id="comment-${comment.id}">
+                        <div class="comment-content">
+                          <p class="comment-author">${escapeHtml(comment.authorNickname)}</p>
+                          <div class="comment-body">
+                            <p>${escapeHtml(comment.content)}</p>
+                          </div>
+                          <div class="comment-meta">
+                            <span>${fmt(comment.createdAt)}</span>
+                            <span class="comment-actions">${buttons}</span>
+                          </div>
+                        </div>
+                      </div>
+                    `;
+                }).join('');
+            }
+        } catch {
+            commentListContainer.innerHTML = '<p>댓글을 불러오는 중 오류가 발생했습니다.</p>';
+        }
+    }
+
+    /* ============================
+       이벤트 바인딩
+       ============================ */
+    document.addEventListener('DOMContentLoaded', () => {
+        loadDetail();
+
+        // 좋아요 클릭
+        $('#likeBtn').addEventListener('click', async () => {
+            if (!getAccessToken()) { alert('로그인이 필요합니다.'); location.href = '/login'; return; }
+            try {
+                const response = await api(`/api/board/${boardId}/like`, { method: 'POST' });
+                if (response && typeof response.isLiked === 'boolean' && typeof response.likeCount === 'number') {
+                    $('#likeBtn').classList.toggle('liked', response.isLiked);
+                    $('#likeCount').textContent = response.likeCount;
+                } else {
+                    location.reload();
+                }
+            } catch {
+                alert('좋아요 처리 중 오류가 발생했습니다.');
+            }
+        });
+
+        // 댓글 작성
+        $('#comment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!getAccessToken()) return;
+            const contentInput = $('#comment-content');
+            const content = contentInput.value.trim();
+            if (!content) { alert('댓글 내용을 입력하세요.'); return; }
+            try {
+                await api(`/api/board/${boardId}/comments`, { method: 'POST', body: JSON.stringify({ content }) });
+                contentInput.value = '';
+                loadComments();
+                const head = $('#comment-count-header');
+                const cur = parseInt((head.textContent.match(/\d+/) || ['0'])[0], 10);
+                head.textContent = `댓글 ${cur + 1}개`;
+            } catch {
+                alert('댓글 작성 중 오류가 발생했습니다.');
+            }
+        });
+
+        // 댓글 수정/삭제 (이벤트 위임)
+        $('#comment-list').addEventListener('click', async (e) => {
+            const target = e.target;
+
+            // 삭제
+            if (target.classList.contains('comment-delete-btn')) {
+                if (!confirm('정말로 이 댓글을 삭제하시겠습니까?')) return;
+                const commentId = target.dataset.commentId;
+                try {
+                    await api(`/api/comments/${commentId}`, { method: 'DELETE' });
+                    loadComments();
+                    const head = $('#comment-count-header');
+                    const cur = parseInt((head.textContent.match(/\d+/) || ['1'])[0], 10);
+                    head.textContent = `댓글 ${Math.max(0, cur - 1)}개`;
+                } catch (err) {
+                    alert('댓글 삭제 중 오류가 발생했습니다: ' + (err.message || err));
+                }
+            }
+
+            // 수정 버튼 클릭
+            if (target.classList.contains('comment-edit-btn')) {
+                const commentId = target.dataset.commentId;
+                const commentItem = document.getElementById(`comment-${commentId}`);
+                const commentBody = commentItem.querySelector('.comment-body');
+                const originalContent = target.dataset.commentContent;
+
+                commentBody.innerHTML = `
+                    <textarea class="comment-edit-textarea" style="width: 100%; box-sizing: border-box; min-height: 60px; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">${originalContent}</textarea>
+                    <div style="text-align: right; margin-top: 4px;">
+                        <button class="comment-save-btn" data-comment-id="${commentId}" style="padding: 4px 8px; border: 1px solid #333; background: #333; color: #fff; border-radius: 4px;">저장</button>
+                        <button class="comment-cancel-btn" style="padding: 4px 8px; border: 1px solid #ccc; background: #fff; border-radius: 4px; margin-left: 4px;">취소</button>
+                    </div>
+                `;
+            }
+
+            // 취소 버튼 클릭
+            if (target.classList.contains('comment-cancel-btn')) {
+                loadComments(); // 간단하게 목록을 다시 로드하여 수정 상태를 취소
+            }
+
+            // 저장 버튼 클릭
+            if (target.classList.contains('comment-save-btn')) {
+                const commentId = target.dataset.commentId;
+                const commentItem = document.getElementById(`comment-${commentId}`);
+                const newContent = commentItem.querySelector('.comment-edit-textarea').value.trim();
+
+                if (!newContent) {
+                    alert('댓글 내용을 입력하세요.');
+                    return;
+                }
+
+                try {
+                    await api(`/api/comments/${commentId}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({ content: newContent })
+                    });
+                    loadComments(); // 수정 후 목록 새로고침
+                } catch (err) {
+                    alert('댓글 수정 중 오류가 발생했습니다: ' + (err.message || err));
+                }
+            }
+        });
+    });
 </script>
+
 </body>
 </html>

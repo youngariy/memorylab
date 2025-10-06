@@ -40,6 +40,7 @@ public class AuthDtos {
 
     @Getter
     @Builder
+    @AllArgsConstructor
     public static class LoginRes {
         private String accessToken;
         private String refreshToken;
@@ -52,11 +53,14 @@ public class AuthDtos {
         @NotBlank private String refreshToken;
     }
 
+    // public record RefreshRes(String accessToken) {} // 이전 코드
     @Getter
-    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor // public 생성자를 만들어주기 위해 추가
     public static class RefreshRes {
         private String accessToken;
     }
+
 
     // === DTOs for new signup flow ===
     @Getter

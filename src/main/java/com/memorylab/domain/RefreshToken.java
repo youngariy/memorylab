@@ -1,40 +1,49 @@
 package com.memorylab.domain;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
-@Entity
 @Getter
+@Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
 public class RefreshToken {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(nullable = false, unique = true)
-    private Long userId;
-
-    @Column(nullable = false, length = 512)
-    private String tokenValue;
+    @Column(length = 255)
+    private String jti; // JWT ID (Primary Key)
 
     @Column(nullable = false)
-    private Instant expiryDate;
+    private Long userId;
 
-    @Builder
-    public RefreshToken(Long userId, String tokenValue, Instant expiryDate) {
+    @Column(nullable = false, length = 255)
+    private String tokenHash; // 토큰 해시
+
+    @Column(nullable = false)
+    private LocalDateTime expiresAt; // 만료 시각
+
+    @Column(nullable = false)
+    private boolean revoked = false; // 폐기 여부
+
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt = LocalDateTime.now();
+
+    private RefreshToken(String jti, Long userId, String tokenHash, LocalDateTime expiresAt) {
+        this.jti = jti;
         this.userId = userId;
-        this.tokenValue = tokenValue;
-        this.expiryDate = expiryDate;
+        this.tokenHash = tokenHash;
+        this.expiresAt = expiresAt;
+        this.revoked = false;
     }
 
-    public void updateToken(String tokenValue, Instant expiryDate) {
-        this.tokenValue = tokenValue;
-        this.expiryDate = expiryDate;
+    public static RefreshToken of(String jti, Long userId, String tokenHash, LocalDateTime expiresAt) {
+        return new RefreshToken(jti, userId, tokenHash, expiresAt);
     }
 }

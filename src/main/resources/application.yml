@@ -4,21 +4,21 @@ server:
 spring:
   application:
     name: memorylab
-  # === Multipart 설정 추가 ===
   servlet:
     multipart:
       enabled: true
-      max-file-size: 500MB          # 개별 파일 최대 500MB
-      max-request-size: 510MB       # 총 요청 최대 510MB
-      file-size-threshold: 2MB      # 2MB 이상이면 디스크에 임시 저장
+      max-file-size: 500MB
+      max-request-size: 510MB
+      file-size-threshold: 2MB
 
   datasource:
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update
+      # ddl-auto를 none으로 설정하여 스키마 관리를 Flyway에 완전히 위임합니다.
+      ddl-auto: none
     properties:
       hibernate:
         format_sql: true
@@ -28,7 +28,7 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: ${SPRING_MAIL_USERNAME:}      # 비밀은 env로
+    username: ${SPRING_MAIL_USERNAME:}
     password: ${SPRING_MAIL_PASSWORD:}
     properties:
       mail:
@@ -46,24 +46,36 @@ spring:
 app:
   mail:
     from: ${APP_MAIL_FROM:${SPRING_MAIL_USERNAME:}}
-  # === 파일 저장소 설정 (보안 강화) ===
   upload:
-    root-dir: /var/www/uploads/                     # 중요: 실제 서버의 최상위 파일 저장 경로
-    converted-base-url: /media/converted          # 중요: 외부에서 변환된 파일에 접근하기 위한 URL
+    root-dir: /home/ec2-user/app/uploads/ # 프롬프트 요구사항 경로
+    converted-base-url: /media/converted
 
-  ai-server:
-    url: http://localhost:8081/api/v1/convert      # 변환 요청 URL
-    status-url: http://localhost:8081/api/v1/status/{boardId} # 상태 폴링 URL
-    secret-key: "YOUR_SUPER_SECRET_KEY_FOR_AI_SERVER" # 중요: AI 서버와 공유할 비밀 키
-    timestamp-validity-sec: 300 # 서명 타임스탬프 유효 시간 (초)
-  # === 스케줄러 설정 ===
+  # --- FFmpeg/FFprobe 경로 설정 ---
+  ffmpeg:
+    path: ffmpeg
+  ffprobe:
+    path: ffprobe
+
+  ai-server: # 트랜스코딩 관련 설정 (기존 유지)
+    url: https://localhost:8081/api/v1/convert
+    status-url: https://localhost:8081/api/v1/status/{boardId}
+    secret-key: ${AI_SERVER_SECRET_KEY:"YOUR_SUPER_SECRET_KEY"} # 환경변수화
+    timestamp-validity-sec: 300
+
+  # --- 스케줄러 설정 ---
   scheduler:
-    conversion-rate-ms: 30000 # 동영상 변환 스케줄러 실행 주기 (ms)
-    polling-rate-ms: 60000    # 폴링 스케줄러 실행 주기 (ms)
-    stale-threshold-minutes: 5 # 폴링 대상이 될 지연 시간 (분)
-    max-retries: 3            # 최대 재시도 횟수
-    batch-size: 5             # 한 번에 처리할 작업 수
-    concurrency: 3            # 동시 처리 스레드 수
+    # 동영상 변환 스케줄러 (기존)
+    conversion-rate-ms: 30000
+    polling-rate-ms: 60000
+    stale-threshold-minutes: 5
+    max-retries: 3
+    batch-size: 5
+    concurrency: 3
+    # 신규: 썸네일 생성 스케줄러
+    thumbnail:
+      rate-ms: 30000        # 실행 주기 (30초)
+      batch-size: 10        # 한 번에 처리할 작업 수
+      max-retries: 3        # 최대 재시도 횟수
 
 jwt:
   secret: ${JWT_SECRET}
@@ -72,26 +84,25 @@ jwt:
 logging:
   level:
     org.springframework.security: DEBUG
+    com.memorylab.service.ThumbnailService: DEBUG # ffmpeg 로그 확인용
 
-# === Actuator 설정 추가 ===
 management:
   endpoints:
     web:
       exposure:
-        include: "*" # 개발 중에는 health, info, metrics, prometheus 등 필요한 것만 선별적으로 노출하세요.
+        include: "*"
   metrics:
     tags:
-      application: ${spring.application.name} # 모든 메트릭에 애플리케이션 이름 태그 추가
+      application: ${spring.application.name}
 
-# === Resilience4j 서킷 브레이커 설정 ===
 resilience4j.circuitbreaker:
   instances:
-    ai-server: # 서킷 브레이커 인스턴스 이름
-      failure-rate-threshold: 50 # 실패율 임계값 (50%). 이 비율 이상 실패하면 회로 차단
-      slow-call-duration-threshold: 10s # 10초 이상 걸리는 호출을 느린 호출로 간주
-      slow-call-rate-threshold: 50 # 느린 호출 비율 임계값 (50%). 이 비율 이상이면 회로 차단
-      wait-duration-in-open-state: 60s # 회로가 차단된 상태를 유지하는 시간. 이후 half-open 상태로 전환
-      permitted-number-of-calls-in-half-open-state: 3 # half-open 상태에서 허용할 테스트 호출 수
-      sliding-window-type: COUNT_BASED # 카운트 기반으로 최근 호출 기록
-      sliding-window-size: 10 # 실패율을 계산할 최근 호출의 수
-      minimum-number-of-calls: 5 # 실패율을 계산하기 위한 최소 호출 수
+    ai-server:
+      failure-rate-threshold: 50
+      slow-call-duration-threshold: 10s
+      slow-call-rate-threshold: 50
+      wait-duration-in-open-state: 60s
+      permitted-number-of-calls-in-half-open-state: 3
+      sliding-window-type: COUNT_BASED
+      sliding-window-size: 10
+      minimum-number-of-calls: 5

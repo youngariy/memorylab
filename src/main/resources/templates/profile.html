@@ -180,8 +180,7 @@
         if (!myId) { wrap.style.display='none'; return; }
 
         try {
-            const url = new URL('/api/board', location.origin);
-            url.searchParams.set('authorId', myId);
+            const url = new URL('/api/board/me', location.origin);
             url.searchParams.set('page', page);
             url.searchParams.set('size', size);
 

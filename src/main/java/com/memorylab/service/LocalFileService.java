@@ -1,85 +1,110 @@
 package com.memorylab.service;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.UUID;
 
 @Slf4j
 @Service
+@Primary
 public class LocalFileService implements FileService {
 
-    private final Path rootDir;
+    private final Path rootLocation;
+    // 새 썸네일 경로
+    private static final Path THUMB_ROOT = Paths.get("/home/ec2-user/app/data/thumbnails");
 
-    public LocalFileService(@Value("${app.upload.root-dir}") String rootDir) {
-        this.rootDir = Paths.get(rootDir).toAbsolutePath().normalize();
+    public LocalFileService(@Value("${app.upload.root-dir:/home/ec2-user/app/uploads}") String uploadRootDir) {
+        this.rootLocation = Paths.get(uploadRootDir).toAbsolutePath().normalize();
+    }
+
+    @PostConstruct
+    public void init() {
         try {
-            Files.createDirectories(this.rootDir);
-        } catch (Exception ex) {
-            throw new RuntimeException("최상위 업로드 디렉토리를 생성할 수 없습니다.", ex);
+            Files.createDirectories(rootLocation.resolve("videos"));
+            // 새 썸네일 경로 생성
+            Files.createDirectories(THUMB_ROOT);
+        } catch (IOException e) {
+            log.error("Could not initialize storage location", e);
+            throw new RuntimeException("Could not initialize storage location", e);
         }
     }
 
     @Override
-    public String storeFile(MultipartFile file, FileType fileType) {
-        String originalFileName = StringUtils.cleanPath(file.getOriginalFilename());
-        try {
-            return store(file.getInputStream(), fileType, originalFileName);
-        } catch (IOException ex) {
-            throw new RuntimeException("파일 " + originalFileName + "의 InputStream을 얻을 수 없습니다.", ex);
-        }
+    public Path getVideoPath(Long boardId) {
+        return rootLocation.resolve(Paths.get("videos", String.valueOf(boardId), "video.mp4")).normalize();
     }
 
     @Override
-    public String storeFile(byte[] fileData, FileType fileType, String originalFileName) {
-        return store(new ByteArrayInputStream(fileData), fileType, originalFileName);
+    public Path getThumbnailPath(Long boardId) {
+        // 새 경로 구조에 맞게 수정
+        return THUMB_ROOT.resolve(boardId + ".jpg");
     }
 
-    private String store(InputStream inputStream, FileType fileType, String originalFileName) {
+    @Override
+    public Path getTempThumbnailPath(Long boardId) {
+        // 새 경로 구조에 맞게 수정
+        return THUMB_ROOT.resolve(boardId + ".tmp.jpg");
+    }
+
+    @Override
+    public String getRelativeThumbnailUrl(Long boardId) {
+        // 새 경로 구조에 맞게 수정
+        return "/thumbnails/" + boardId + ".jpg";
+    }
+
+    @Override
+    public Path getVideoDirectory(Long boardId) {
+        return rootLocation.resolve(Paths.get("videos", String.valueOf(boardId))).normalize();
+    }
+
+    @Override
+    public Path getThumbnailDirectory(Long boardId) {
+        // 새 썸네일 루트 디렉토리 반환
+        return THUMB_ROOT;
+    }
+
+    @Override
+    public void saveFile(MultipartFile file, Path destination) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty or null");
+        }
+        Files.createDirectories(destination.getParent());
+        Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    @Override
+    public void moveFile(Path source, Path destination) throws IOException {
+        Files.createDirectories(destination.getParent());
+        Files.move(source, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        log.info("Atomically moved file from {} to {}", source, destination);
+    }
+
+    @Override
+    public void deleteDirectory(Path directoryPath) {
         try {
-            if (originalFileName != null && originalFileName.contains("..")) {
-                throw new RuntimeException("파일명에 부적합한 문자가 포함되어 있습니다: " + originalFileName);
+            if (Files.exists(directoryPath)) {
+                Files.walk(directoryPath)
+                     .sorted((p1, p2) -> -p1.compareTo(p2))
+                     .forEach(p -> {
+                         try {
+                             Files.delete(p);
+                         } catch (IOException e) {
+                             log.error("Failed to delete path: {}", p, e);
+                         }
+                     });
+                log.info("Successfully deleted directory: {}", directoryPath);
             }
-
-            Path targetDir = this.rootDir.resolve(fileType.getDirectoryName()).normalize();
-            Files.createDirectories(targetDir);
-
-            String fileExtension = StringUtils.getFilenameExtension(originalFileName);
-            String storedFileName = UUID.randomUUID() + (fileExtension != null ? "." + fileExtension : "");
-
-            Path targetLocation = targetDir.resolve(storedFileName);
-            Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
-
-            String relativePath = Paths.get(fileType.getDirectoryName()).resolve(storedFileName).toString().replace("\\", "/");
-            log.info("파일 저장 성공: {}", relativePath);
-            return relativePath;
-
-        } catch (IOException ex) {
-            throw new RuntimeException("파일 " + originalFileName + "을(를) 저장할 수 없습니다. 다시 시도해 주세요.", ex);
-        }
-    }
-
-    @Override
-    public void deleteFile(String relativePath) {
-        if (!StringUtils.hasText(relativePath)) {
-            return;
-        }
-        try {
-            Path targetLocation = this.rootDir.resolve(relativePath).normalize();
-            Files.deleteIfExists(targetLocation);
-            log.info("파일 삭제 성공: {}", relativePath);
-        } catch (IOException ex) {
-            log.error("파일 {} 을(를) 삭제할 수 없습니다.", relativePath, ex);
+        } catch (IOException e) {
+            log.error("Error while trying to delete directory: {}", directoryPath, e);
         }
     }
 }

@@ -65,8 +65,8 @@ public class AuthController {
         return ResponseEntity.ok(res);
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<ProfileRes> me(@AuthenticationPrincipal Long userId) {
-        return ResponseEntity.ok(auth.getProfile(userId));
-    }
+//    @GetMapping("/me")
+//    public ResponseEntity<ProfileRes> me(@AuthenticationPrincipal Long userId) {
+//        return ResponseEntity.ok(auth.getProfile(userId));
+//    }
 }

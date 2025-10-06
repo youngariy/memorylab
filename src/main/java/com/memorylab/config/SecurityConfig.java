@@ -36,7 +36,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 정적 리소스 허용
                         .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
-                        .requestMatchers("/img/**", "/css/**", "/js/**").permitAll()
+                        .requestMatchers("/img/**","/thumbnails/**", "/images/**", "/css/**", "/js/**").permitAll()
 
                         // 서버 렌더링 페이지 공개
                         .requestMatchers("/", "/index", "/login", "/signup", "/profile",
@@ -86,12 +86,15 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 운영 출처는 Nginx에서 동일 출처로 처리되므로 제거.
-        // 오직 로컬 개발 환경에서의 테스트만을 위해 허용합니다.
+        // TODO: 프로덕션 배포 시에는 실제 서비스 도메인(https://...)만 허용하도록 변경해야 합니다.
         configuration.setAllowedOriginPatterns(Arrays.asList(
-                "http://localhost:5173",    // 예: Vite 개발 서버
-                "http://localhost:3000",    // 예: React 개발 서버
-                "http://127.0.0.1:5500"   // 예: VSCode Live Server
+                "https://*.memorylab.com", // 프로덕션 도메인 (HTTPS)
+                "https://localhost:5173",
+                "https://localhost:3000",
+                "https://127.0.0.1:5500",
+                "http://localhost:5173",    // 로컬 개발용 (Vite)
+                "http://localhost:3000",    // 로컬 개발용 (React)
+                "http://127.0.0.1:5500"   // 로컬 개발용 (Live Server)
         ));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));

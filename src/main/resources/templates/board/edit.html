@@ -50,11 +50,6 @@
         </div>
 
         <div class="row">
-            <label for="tags">태그</label>
-            <input id="tags" name="tags" placeholder="쉼표(,)로 구분하여 태그를 입력하세요" />
-        </div>
-
-        <div class="row">
             <label for="category">분류</label>
             <select id="category" name="category" required>
                 <option value="NOTICE">공지</option>
@@ -102,7 +97,6 @@
     const f = $('#f'), submitBtn = $('#submitBtn');
     let selectedFile = null;
 
-    // 페이지 초기화 (인증, 권한 확인, 데이터 로드)
     async function initializePage() {
         if (!boardId) { alert('게시글 ID가 없습니다.'); location.href = '/board/list'; return; }
         if (!getAccessToken()) { alert('로그인이 필요합니다.'); location.href = '/login'; return; }
@@ -111,30 +105,25 @@
             const me = await api('/api/auth/me');
             const post = await api(`/api/board/${boardId}`);
 
-            // 권한 확인 (본인 또는 관리자)
             if (post.authorId !== me.id && !me.roles.includes('ROLE_ADMIN')) {
                 alert('수정할 권한이 없습니다.');
                 location.href = `/board/view?id=${boardId}`;
                 return;
             }
 
-            // 헤더 설정
             const auth = document.getElementById('authLinks');
             if (auth) auth.innerHTML = `<a href="/profile" style="margin-right: 10px;">내 정보</a><a href="#" id="logoutBtn">로그아웃</a>`;
             document.addEventListener('click', (e) => {
                 if (e.target && e.target.id === 'logoutBtn') { e.preventDefault(); logout(); }
             });
 
-            // 관리자 아닐 시 공지 카테고리 제거
             if (!me.roles || !me.roles.includes('ROLE_ADMIN')) {
                 const noticeOption = $('#category option[value="NOTICE"]');
                 if (noticeOption) noticeOption.remove();
             }
 
-            // 폼 데이터 채우기
             $('#title').value = post.title || '';
             $('#content').value = post.content || '';
-            $('#tags').value = post.tags || '';
             $('#category').value = post.category || 'FREE';
             $('#visibility').value = post.visibility || 'PUBLIC';
             if (post.videoUrl) {
@@ -156,7 +145,7 @@
         const maxSize = 500 * 1024 * 1024;
         if (file.size > maxSize) { alert(`파일 크기는 500MB를 초과할 수 없습니다.`); return; }
         selectedFile = file;
-        fileInfo.textContent = `새로 첨부할 파일: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`;
+        fileInfo.textContent = `새로 첨부할 파일: ${file.name}`;
     }
 
     dropzone.addEventListener('click', () => fileInput.click());
@@ -180,8 +169,7 @@
             title: title,
             content: content,
             category: $('#category').value,
-            visibility: $('#visibility').value,
-            tags: $('#tags').value.trim()
+            visibility: $('#visibility').value
         };
         formData.append('req', new Blob([JSON.stringify(boardData)], { type: "application/json" }));
         if (selectedFile) { formData.append('videoFile', selectedFile); }

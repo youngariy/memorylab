@@ -1,0 +1,5 @@
+spring:
+  jpa:
+    hibernate:
+      # prod 프로필에서 ddl-auto를 none으로 강제하여, 스키마 관리를 Flyway에 완전히 위임합니다.
+      ddl-auto: none

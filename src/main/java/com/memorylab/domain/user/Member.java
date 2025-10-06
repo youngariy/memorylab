@@ -12,7 +12,7 @@ import java.util.List;
         @Index(columnList = "email", unique = true),
         @Index(columnList = "nickname", unique = true)
 })
-public class User {
+public class Member {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 

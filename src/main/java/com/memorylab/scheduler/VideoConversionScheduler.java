@@ -1,94 +1,71 @@
 package com.memorylab.scheduler;
 
 import com.memorylab.domain.board.Board;
-import com.memorylab.domain.board.ConversionStatus;
-import com.memorylab.repository.board.BoardRepository;
-import com.memorylab.service.board.BoardService;
+import com.memorylab.domain.board.BoardRepository;
+import com.memorylab.domain.board.TranscodeStatus;
+import com.memorylab.service.TranscodeService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.MDC;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class VideoConversionScheduler {
 
-    private static final String TRACE_ID_KEY = "traceId";
-
     private final BoardRepository boardRepository;
-    private final BoardService boardService;
-    private final TaskExecutor taskExecutor;
-
-    @Value("${app.scheduler.max-retries:3}")
-    private int maxRetries;
+    private final TranscodeService transcodeService; // 새로운 TranscodeService 주입
 
     @Value("${app.scheduler.batch-size:5}")
     private int batchSize;
 
-    private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    @Value("${app.scheduler.max-retries:3}")
+    private int maxRetries;
 
-    public VideoConversionScheduler(BoardRepository boardRepository, BoardService boardService, @Qualifier("videoConversionTaskExecutor") TaskExecutor taskExecutor) {
-        this.boardRepository = boardRepository;
-        this.boardService = boardService;
-        this.taskExecutor = taskExecutor;
-    }
+    private volatile boolean isSchedulerRunning = false;
 
     @Scheduled(fixedRateString = "${app.scheduler.conversion-rate-ms:30000}")
-    public void processVideoConversionQueue() {
-        if (isRunning.getAndSet(true)) {
-            log.warn("Scheduler is already running. Skipping this execution.");
+    public void processPendingConversions() {
+        if (isSchedulerRunning) {
+            log.warn("Video conversion scheduler is already running. Skipping this cycle.");
             return;
         }
-
-        // 스케줄러 실행을 위한 최상위 traceId 생성
-        MDC.put(TRACE_ID_KEY, "scheduler-" + UUID.randomUUID().toString().substring(0, 8));
+        isSchedulerRunning = true;
+        log.info("Starting video conversion processing scheduler...");
 
         try {
-            log.info("Video conversion scheduler started. Batch size: {}", batchSize);
+            Pageable pageable = PageRequest.of(0, batchSize, Sort.by("createdAt").ascending());
 
-            Page<Board> pendingJobs = boardRepository.findByConversionStatusOrderByCreatedAtAsc(
-                    ConversionStatus.PENDING,
-                    PageRequest.of(0, batchSize)
+            // PENDING 상태이고, 최대 재시도 횟수를 넘지 않은 게시물을 조회
+            Page<Board> pendingBoards = boardRepository.findBoardsByTranscodeStatusAndRetryCountLessThan(
+                    TranscodeStatus.PENDING, maxRetries, pageable
             );
 
-            if (pendingJobs.isEmpty()) {
-                log.info("No pending conversion jobs found.");
+            if (pendingBoards.isEmpty()) {
+                log.info("No pending video conversions to process.");
                 return;
             }
 
-            log.info("Found {} pending jobs. Submitting to the thread pool...", pendingJobs.getNumberOfElements());
-
-            for (Board board : pendingJobs.getContent()) {
-                // MdcTaskDecorator가 현재 스레드의 MDC 컨텍스트를 복사하여 자식 스레드로 전파
-                taskExecutor.execute(() -> {
-                    try {
-                        log.info("Processing job in a new thread: boardId={}, retryCount={}", board.getId(), board.getRetryCount());
-
-                        if (board.getRetryCount() >= maxRetries) {
-                            log.warn("BoardId={} has reached the max retry limit. Marking as dead-letter.", board.getId());
-                            boardService.markAsDeadLetter(board.getId());
-                        } else {
-                            boardService.triggerAiConversion(board.getId());
-                        }
-                    } catch (Exception e) {
-                        log.error("An unexpected error occurred in the conversion task for boardId={}.", board.getId(), e);
-                    }
-                });
+            log.info("Found {} boards to trigger AI conversion for.", pendingBoards.getTotalElements());
+            for (Board board : pendingBoards) {
+                try {
+                    // TranscodeService를 통해 AI 변환 요청
+                    transcodeService.triggerAiConversion(board.getId());
+                } catch (Exception e) {
+                    log.error("Error while triggering AI conversion for boardId: {}", board.getId(), e);
+                }
             }
-
+        } catch (Exception e) {
+            log.error("An unexpected error occurred in the video conversion scheduler.", e);
         } finally {
-            isRunning.set(false);
-            log.info("Video conversion scheduler finished.");
-            // 스케줄러 스레드의 MDC 컨텍스트 정리
-            MDC.clear();
+            isSchedulerRunning = false;
+            log.info("Video conversion processing scheduler finished.");
         }
     }
 }
