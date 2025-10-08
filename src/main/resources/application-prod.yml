@@ -3,3 +3,21 @@ spring:
     hibernate:
       # prod 프로필에서 ddl-auto를 none으로 강제하여, 스키마 관리를 Flyway에 완전히 위임합니다.
       ddl-auto: none
+
+# --- AI 서버 연동 설정 ---
+ai:
+  server:
+    base-url: "https://mlab-api.snowytiger.me"
+
+file:
+  storage:
+    # 최종 PLY 파일이 저장될 서버의 절대 경로입니다.
+    ply-base-path: "/srv/memorylab/uploads/ply"
+    # 파일 다운로드 시 임시로 사용될 서버의 절대 경로입니다.
+    tmp-path: "/srv/memorylab/tmp"
+  download:
+    # PLY 결과 파일 다운로드를 허용할 도메인 목록입니다.
+    allowed-domains:
+      - "mlab-api.snowytiger.me"
+    # 다운로드를 시작하기 위해 필요한 최소 디스크 여유 공간(MB)입니다.
+    min-free-space-mb: 100

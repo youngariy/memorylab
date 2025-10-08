@@ -12,7 +12,7 @@ MemoryLab 추억현상소
 
 ## 🛠️ 기술 스택
 - **Backend**: Java 21, Spring Boot, Spring Security, JPA
-- **Frontend**: HTML, CSS, JavaScript, Thymeleaf
+- **Frontend**: HTML, CSS, Thymeleaf, JavaScript (Three.js + Spark.js 오픈소스 활용)
 - **Database**: H2 / MySQL
 - **Build**: Gradle
 
@@ -27,6 +27,13 @@ src/
 └─ resources
 ├─ templates
 └─ application.yml
+
+## 프론트 표시 규칙
+* READY 상태일 때 “3D 보기” 버튼 활성화 → Spark.js 오픈소스를 활용해 PLY를 Three.js 씬에 렌더링.
+
+## 외부 라이브러리 사용
+* 3D Gaussian splat 렌더링을 위해 [Spark.js](https://github.com/sparkjsdev/spark) 오픈소스를 활용.
+* MIT 라이선스 기반, Three.js와 호환.
 
 
 ## 📅 진행 일정

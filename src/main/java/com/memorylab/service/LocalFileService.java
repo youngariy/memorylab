@@ -19,19 +19,20 @@ import java.nio.file.StandardCopyOption;
 public class LocalFileService implements FileService {
 
     private final Path rootLocation;
-    // 새 썸네일 경로
-    private static final Path THUMB_ROOT = Paths.get("/home/ec2-user/app/data/thumbnails");
+    private final Path videoRoot;
+    private final Path thumbnailRoot; // 썸네일 루트 경로 추가
 
     public LocalFileService(@Value("${app.upload.root-dir:/home/ec2-user/app/uploads}") String uploadRootDir) {
         this.rootLocation = Paths.get(uploadRootDir).toAbsolutePath().normalize();
+        this.videoRoot = this.rootLocation.resolve("videos").normalize();
+        this.thumbnailRoot = this.rootLocation.resolve("thumbnails").normalize(); // 썸네일 경로 초기화
     }
 
     @PostConstruct
     public void init() {
         try {
-            Files.createDirectories(rootLocation.resolve("videos"));
-            // 새 썸네일 경로 생성
-            Files.createDirectories(THUMB_ROOT);
+            Files.createDirectories(videoRoot);
+            Files.createDirectories(thumbnailRoot); // 썸네일 디렉토리 생성 로직 추가
         } catch (IOException e) {
             log.error("Could not initialize storage location", e);
             throw new RuntimeException("Could not initialize storage location", e);
@@ -39,37 +40,8 @@ public class LocalFileService implements FileService {
     }
 
     @Override
-    public Path getVideoPath(Long boardId) {
-        return rootLocation.resolve(Paths.get("videos", String.valueOf(boardId), "video.mp4")).normalize();
-    }
-
-    @Override
-    public Path getThumbnailPath(Long boardId) {
-        // 새 경로 구조에 맞게 수정
-        return THUMB_ROOT.resolve(boardId + ".jpg");
-    }
-
-    @Override
-    public Path getTempThumbnailPath(Long boardId) {
-        // 새 경로 구조에 맞게 수정
-        return THUMB_ROOT.resolve(boardId + ".tmp.jpg");
-    }
-
-    @Override
-    public String getRelativeThumbnailUrl(Long boardId) {
-        // 새 경로 구조에 맞게 수정
-        return "/thumbnails/" + boardId + ".jpg";
-    }
-
-    @Override
-    public Path getVideoDirectory(Long boardId) {
-        return rootLocation.resolve(Paths.get("videos", String.valueOf(boardId))).normalize();
-    }
-
-    @Override
-    public Path getThumbnailDirectory(Long boardId) {
-        // 새 썸네일 루트 디렉토리 반환
-        return THUMB_ROOT;
+    public Path getVideoPath(String uniqueFilename) {
+        return videoRoot.resolve(uniqueFilename).normalize();
     }
 
     @Override
@@ -82,16 +54,12 @@ public class LocalFileService implements FileService {
     }
 
     @Override
-    public void moveFile(Path source, Path destination) throws IOException {
-        Files.createDirectories(destination.getParent());
-        Files.move(source, destination, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-        log.info("Atomically moved file from {} to {}", source, destination);
-    }
-
-    @Override
     public void deleteDirectory(Path directoryPath) {
         try {
-            if (Files.exists(directoryPath)) {
+            if (Files.notExists(directoryPath)) {
+                return;
+            }
+            if (Files.isDirectory(directoryPath)) {
                 Files.walk(directoryPath)
                      .sorted((p1, p2) -> -p1.compareTo(p2))
                      .forEach(p -> {
@@ -101,10 +69,17 @@ public class LocalFileService implements FileService {
                              log.error("Failed to delete path: {}", p, e);
                          }
                      });
-                log.info("Successfully deleted directory: {}", directoryPath);
+            } else {
+                Files.delete(directoryPath);
             }
+            log.info("Successfully deleted path: {}", directoryPath);
         } catch (IOException e) {
-            log.error("Error while trying to delete directory: {}", directoryPath, e);
+            log.error("Error while trying to delete path: {}", directoryPath, e);
         }
+    }
+
+    @Override
+    public Path getUploadRootDir() {
+        return this.rootLocation;
     }
 }

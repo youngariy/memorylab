@@ -2,14 +2,10 @@ package com.memorylab.web.board;
 
 import com.memorylab.domain.user.Member;
 import com.memorylab.domain.user.MemberRepository;
-import com.memorylab.dto.board.BoardCreateRequestDto;
-import com.memorylab.dto.board.BoardDetailResponseDto;
-import com.memorylab.dto.board.BoardListResponseDto;
-import com.memorylab.dto.board.BoardUpdateRequestDto;
+import com.memorylab.dto.board.*;
 import com.memorylab.service.LikeService;
 import com.memorylab.service.board.BoardService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -37,7 +33,6 @@ public class BoardController {
     public ResponseEntity<BoardDetailResponseDto> createBoard(
             @RequestPart("req") BoardCreateRequestDto requestDto,
             @RequestPart(value = "videoFile", required = false) MultipartFile videoFile,
-            @RequestPart(value = "thumbnailFile", required = false) MultipartFile thumbnailFile,
             @AuthenticationPrincipal UserDetails userDetails) throws IOException {
 
         if (userDetails == null) {
@@ -45,12 +40,13 @@ public class BoardController {
         }
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        BoardDetailResponseDto responseDto = boardService.createBoard(requestDto, member, videoFile, thumbnailFile);
+        // 수정: thumbnailFile 파라미터 제거
+        BoardDetailResponseDto responseDto = boardService.createBoard(requestDto, member, videoFile);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Page<BoardListResponseDto>> getMyBoardList(
+    public ResponseEntity<BoardPageResponseDto> getMyBoardList(
             @PageableDefault(size = 12, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
             Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -61,19 +57,17 @@ public class BoardController {
                 .map(Member::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        // '내 글' 전용 서비스 메서드 호출로 수정
         return ResponseEntity.ok(boardService.getMyBoardList(pageable, meId));
     }
 
     @GetMapping
-    public ResponseEntity<Page<BoardListResponseDto>> getBoardList(
+    public ResponseEntity<BoardPageResponseDto> getBoardList(
             @PageableDefault(size = 12, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
             Pageable pageable,
             @AuthenticationPrincipal UserDetails userDetails) {
         Long userId = (userDetails == null) ? null :
                 memberRepository.findByEmail(userDetails.getUsername()).map(Member::getId).orElse(null);
         
-        // '전체 글' 서비스 메서드 호출 (userId는 '좋아요' 표시에만 사용)
         return ResponseEntity.ok(boardService.getBoardList(pageable, userId));
     }
 
@@ -87,19 +81,19 @@ public class BoardController {
         return ResponseEntity.ok(boardDetail);
     }
 
-    @PutMapping(value = "/{boardId}", consumes = {"multipart/form-data"})
+    @PutMapping("/{boardId}") // 수정: multipart 제거
     public ResponseEntity<BoardDetailResponseDto> updateBoard(
             @PathVariable Long boardId,
-            @RequestPart("req") BoardUpdateRequestDto requestDto,
-            @RequestPart(value = "videoFile", required = false) MultipartFile videoFile,
-            @AuthenticationPrincipal UserDetails userDetails) throws IOException {
+            @RequestBody BoardUpdateRequestDto requestDto, // 수정: @RequestPart -> @RequestBody
+            @AuthenticationPrincipal UserDetails userDetails) {
 
         if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
         Member member = memberRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        BoardDetailResponseDto responseDto = boardService.updateBoard(boardId, requestDto, member, videoFile);
+        // 수정: videoFile 파라미터 제거
+        BoardDetailResponseDto responseDto = boardService.updateBoard(boardId, requestDto, member);
         return ResponseEntity.ok(responseDto);
     }
 

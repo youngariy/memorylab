@@ -2,50 +2,35 @@ package com.memorylab.web.admin;
 
 import com.memorylab.domain.board.Board;
 import com.memorylab.domain.board.BoardRepository;
-import com.memorylab.domain.board.TranscodeStatus;
-import com.memorylab.dto.board.BoardListResponseDto;
-import com.memorylab.service.board.BoardService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Map;
-
-@RestController
-@RequestMapping("/api/admin")
+@Controller
+@RequestMapping("/admin")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('ROLE_ADMIN')")
 public class AdminController {
 
-    private final BoardService boardService;
-    private final BoardRepository boardRepository; // 직접 접근을 위해 추가
+    private final BoardRepository boardRepository;
 
-    // 관리자용 게시판 목록 조회 (기존 BoardListResponseDto 재활용)
-    @GetMapping("/boards")
-    public ResponseEntity<Page<BoardListResponseDto>> getBoardListForAdmin(Pageable pageable) {
-        // 현재는 userId를 null로 넘겨 좋아요 상태 없이 모든 글을 조회
-        Page<BoardListResponseDto> list = boardService.getBoardList(pageable, null);
-        return ResponseEntity.ok(list);
-    }
-
-    // 동영상 변환 재시도 API
-    @PostMapping("/boards/{id}/retry-transcode")
+    @PostMapping("/board/reset-conversion")
     @Transactional
-    public ResponseEntity<?> retryTranscode(@PathVariable Long id) {
-        Board board = boardRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid board ID: " + id));
+    public String resetConversionStatus(@RequestParam("boardId") Long boardId) {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Board not found"));
 
-        if (board.getTranscodeStatus() == TranscodeStatus.FAILED) {
-            board.setTranscodeStatus(TranscodeStatus.PENDING);
-            board.setRetryCount(0); // 재시도 횟수 초기화
-            boardRepository.save(board);
-            return ResponseEntity.ok(Map.of("status", "Transcoding job re-queued."));
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("error", "Retry is only possible for FAILED status."));
-        }
+        // TODO: 새로운 프로토콜에 맞는 재처리 로직 구현 필요 (예: GPU 서버에 다시 업로드 요청)
+        // 현재는 낡은 상태 변경 로직을 제거하여 컴파일 오류만 해결합니다.
+        // if (board.getStatus() == BoardStatus.FAILED_PROCESS) {
+        //     board.setStatus(BoardStatus.DISPATCHED);
+        // }
+
+        boardRepository.save(board);
+        return "redirect:/board/view?id=" + boardId;
     }
 }

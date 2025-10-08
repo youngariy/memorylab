@@ -1,69 +1,51 @@
 package com.memorylab.controller;
 
-import com.memorylab.domain.board.Board;
-import com.memorylab.domain.board.BoardRepository;
-import com.memorylab.domain.board.Visibility;
-import com.memorylab.domain.user.Member;
-import com.memorylab.domain.user.MemberRepository;
-import jakarta.servlet.http.HttpServletResponse;
+import com.memorylab.service.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.Objects;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Controller
-@RequestMapping("/api/thumb")
 @RequiredArgsConstructor
 public class ThumbnailProxyController {
 
-    private final BoardRepository boardRepository;
-    private final MemberRepository memberRepository;
+    private final FileService fileService;
 
-    @GetMapping("/{boardId}")
-    public ResponseEntity<Void> getThumbnail(@PathVariable Long boardId, @AuthenticationPrincipal UserDetails userDetails, HttpServletResponse response) {
-        Board board = boardRepository.findById(boardId)
-                .orElseThrow(() -> new IllegalArgumentException("Board not found"));
+    @GetMapping("/thumbnails/{filename}")
+    public ResponseEntity<Resource> getThumbnail(@PathVariable String filename) {
+        try {
+            // 썸네일은 정해진 단일 디렉토리에 저장됨
+            Path thumbnailDir = Paths.get(fileService.getUploadRootDir().toString(), "thumbnails");
+            Path thumbnailPath = thumbnailDir.resolve(filename).normalize();
 
-        String thumbnailUrl = board.getThumbnailPath();
-        if (thumbnailUrl == null) {
-            return ResponseEntity.notFound().build();
-        }
+            Resource resource = new FileSystemResource(thumbnailPath);
 
-        // 공개 게시물인 경우, 바로 파일 경로로 리다이렉트
-        if (board.getVisibility() == Visibility.PUBLIC) {
-            response.setHeader("Location", thumbnailUrl);
-            return new ResponseEntity<>(HttpStatus.FOUND); // 302 Redirect
-        }
+            if (!resource.exists() || !resource.isReadable()) {
+                log.warn("Thumbnail not found or not readable: {}", thumbnailPath);
+                // 기본 이미지나 404를 반환할 수 있음
+                return ResponseEntity.notFound().build();
+            }
 
-        // 비공개 게시물인 경우, 권한 확인
-        if (userDetails == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+            return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                .body(resource);
 
-        Member currentUser = memberRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userDetails.getUsername()));
-
-        boolean isAdmin = currentUser.getRoles().stream().anyMatch(role -> role.equals("ROLE_ADMIN"));
-        boolean isOwner = Objects.equals(board.getUser().getId(), currentUser.getId());
-
-        if (isAdmin || isOwner) {
-            // 권한이 있으면 Nginx의 X-Accel-Redirect를 통해 내부적으로 파일 전달
-            String internalRedirectUrl = "/protected" + thumbnailUrl.substring("/uploads".length());
-            log.debug("Internal redirect for private thumbnail: {} -> {}", thumbnailUrl, internalRedirectUrl);
-            response.setHeader("X-Accel-Redirect", internalRedirectUrl);
-            response.setHeader("Content-Type", "image/jpeg");
-            return ResponseEntity.ok().build();
-        } else {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        } catch (Exception e) {
+            log.error("Error serving thumbnail file: {}", filename, e);
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

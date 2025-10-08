@@ -45,9 +45,17 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux' // WebClient를 위한 의존성
+
+	// Reactor
+	implementation 'io.projectreactor.addons:reactor-extra' // Retry 유틸리티를 위한 의존성
 
 	// Spring Cloud & Resilience4j (Circuit Breaker)
 	implementation 'org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j'
+
+	// ShedLock for distributed scheduling
+	implementation 'net.javacrumbs.shedlock:shedlock-spring:5.10.2'
+	implementation 'net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.10.2'
 
 	// Security & JWT
 	implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6'

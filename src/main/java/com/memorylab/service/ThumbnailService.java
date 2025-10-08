@@ -5,134 +5,80 @@ import com.memorylab.domain.board.BoardRepository;
 import com.memorylab.domain.board.ThumbnailStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.*;
-import java.util.List;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class ThumbnailService {
 
     private final BoardRepository boardRepository;
+    private final FileService fileService; // LocalFileService가 주입될 것임
 
-    // 업로드/서빙 경로 상수 (필요하면 @Value 로 바꿔도 됨)
-    private static final Path THUMB_ROOT = Paths.get("/home/ec2-user/app/data/thumbnails");
+    @Value("${app.ffmpeg.path:ffmpeg}")
+    private String ffmpegPath;
 
-    @Async("thumbnailExecutor") // 이미 스레드풀 설정돼 있으면 사용, 없으면 @Async 제거해도 동작
     @Transactional
-    public void generateThumbnailAsync(Long boardId) {
-        boardRepository.findById(boardId).ifPresent(board -> {
-            if (board.getOriginalVideoPath() == null) {
-                log.warn("[thumb] boardId={} has no originalVideoPath", boardId);
-                markFailed(board, "NO_INPUT");
-                return;
-            }
-            try {
-                Files.createDirectories(THUMB_ROOT);
-                Path input = Paths.get(board.getOriginalVideoPath());
-                if (!Files.exists(input)) {
-                    markFailed(board, "INPUT_NOT_FOUND");
-                    log.error("[thumb] input not found: {}", input);
-                    return;
-                }
+    public void generateThumbnail(Long boardId) {
+        Board board = boardRepository.findById(boardId)
+            .orElseThrow(() -> new IllegalArgumentException("Board not found: " + boardId));
 
-                // 출력 파일 (tmp -> final 원자적 갱신)
-                Path outTmp  = THUMB_ROOT.resolve(boardId + ".tmp.jpg");
-                Path outFile = THUMB_ROOT.resolve(boardId + ".jpg");
-
-                // 추출 위치(초) 결정: 중간 프레임(or 최소 1초)
-                int ss = pickSecond(input);
-
-                // ffmpeg 실행 (단일 프레임 추출)
-                List<String> cmd = List.of(
-                    "ffmpeg", "-y",
-                    "-ss", String.valueOf(ss),
-                    "-i", input.toString(),
-                    "-frames:v", "1",
-                    "-vf", "thumbnail,scale=640:-1",
-                    outTmp.toString()
-                );
-                int code = runAndLog(cmd, boardId);
-                if (code != 0 || !Files.exists(outTmp)) {
-                    markFailed(board, "FFMPEG_EXIT_" + code);
-                    return;
-                }
-
-                // tmp -> final
-                try {
-                    Files.move(outTmp, outFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-                } catch (AtomicMoveNotSupportedException e) {
-                    Files.move(outTmp, outFile, StandardCopyOption.REPLACE_EXISTING);
-                }
-
-                // DB 업데이트
-                board.setThumbnailStatus(ThumbnailStatus.READY);
-                board.setThumbnailPath("/thumbnails/" + boardId + ".jpg");
-                board.setRetryCount(0);
-                boardRepository.save(board);
-
-                log.info("[thumb] DONE boardId={} -> {}", boardId, outFile);
-            } catch (Exception e) {
-                log.error("[thumb] FAILED boardId={} : {}", boardId, e.getMessage(), e);
-                markFailed(board, "EXCEPTION");
-            }
-        });
-    }
-
-    // 업로드 직후 즉시 시도 (createBoard에서 호출)
-    @Transactional
-    public void attemptImmediateGeneration(Board board) {
-        if (board.getOriginalVideoPath() == null) return;
-        board.setThumbnailStatus(ThumbnailStatus.PENDING);
-        board.setThumbnailPath(null);
-        board.setRetryCount(0);
-        boardRepository.save(board);
-        generateThumbnailAsync(board.getId());
-    }
-
-    private void markFailed(Board board, String reason) {
-        board.setThumbnailStatus(ThumbnailStatus.FAILED);
-        board.setRetryCount(board.getRetryCount() + 1);
-        boardRepository.save(board);
-        log.error("[thumb] FAIL boardId={} reason={}", board.getId(), reason);
-    }
-
-    /** ffprobe로 길이 읽고, 중간 지점(최대 60초)을 선택 */
-    private int pickSecond(Path input) {
-        try {
-            List<String> cmd = List.of(
-                "ffprobe", "-v", "error",
-                "-show_entries", "format=duration",
-                "-of", "default=nw=1:nk=1",
-                input.toString()
-            );
-            Process p = new ProcessBuilder(cmd).redirectErrorStream(true).start();
-            String out = new String(p.getInputStream().readAllBytes()).trim();
-            int code = p.waitFor();
-            if (code == 0) {
-                double d = Double.parseDouble(out);
-                if (Double.isFinite(d) && d > 3) return (int)Math.min(Math.round(d / 2.0), 60);
-            }
-        } catch (Exception ignore) {}
-        return 1;
-    }
-
-    /** ffmpeg/ffprobe 실행 로그 남기기 */
-    private int runAndLog(List<String> cmd, Long boardId) throws IOException, InterruptedException {
-        log.debug("[ffmpeg boardId={}] CMD: {}", boardId, String.join(" ", cmd));
-        Process p = new ProcessBuilder(cmd).redirectErrorStream(true).start();
-        try (var is = p.getInputStream()) {
-            is.transferTo(new java.io.OutputStream() {
-                @Override public void write(int b) {}
-            }); // 출력이 커지면 필요시 로그로 누적
+        if (board.getOriginalVideoPath() == null) {
+            log.warn("Original video path is null for boardId: {}. Cannot generate thumbnail.", boardId);
+            board.setThumbnailStatus(ThumbnailStatus.FAILED);
+            return;
         }
-        int code = p.waitFor();
-        log.debug("[ffmpeg boardId={}] exit={}", boardId, code);
-        return code;
+
+        Path videoPath = Paths.get(board.getOriginalVideoPath());
+        // 썸네일 경로는 FileService가 아닌, 정해진 규칙에 따라 생성
+        Path thumbnailPath = Paths.get(fileService.getUploadRootDir().toString(), "thumbnails", boardId + ".jpg");
+
+        try {
+            Files.createDirectories(thumbnailPath.getParent());
+
+            ProcessBuilder processBuilder = new ProcessBuilder(
+                ffmpegPath,
+                "-i", videoPath.toString(),
+                "-ss", "00:00:01.000", // 1초 시점의 프레임
+                "-vframes", "1",
+                "-q:v", "2", // 높은 품질
+                thumbnailPath.toString(),
+                "-y" // 덮어쓰기 허용
+            );
+
+            log.info("Executing ffmpeg command for boardId: {}: {}", boardId, String.join(" ", processBuilder.command()));
+            Process process = processBuilder.start();
+
+            // ffmpeg 프로세스의 출력을 로깅 (디버깅용)
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    log.debug("[ffmpeg] {}", line);
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode == 0) {
+                log.info("Thumbnail generated successfully for boardId: {}", boardId);
+                board.setThumbnailStatus(ThumbnailStatus.READY);
+                board.setThumbnailPath("/thumbnails/" + boardId + ".jpg"); // 웹 접근 경로
+            } else {
+                throw new IOException("ffmpeg process exited with code: " + exitCode);
+            }
+
+        } catch (IOException | InterruptedException e) {
+            log.error("Thumbnail generation failed for boardId: {}", boardId, e);
+            board.setThumbnailStatus(ThumbnailStatus.FAILED);
+            board.increaseRetryCount();
+        }
     }
 }

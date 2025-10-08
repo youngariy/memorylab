@@ -32,12 +32,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
+
+        String path = request.getServletPath();
+
+        // ✅ 콜백(Webhook) 경로는 JWT/서명과 무관하게 통과 (핑 포함)
+        if (path.equals("/api/v1/ai-callback/notify/ping") ||
+                path.startsWith("/api/v1/ai-callback/")) {
+            logger.info("JWT SKIP for AI callback path={}", path);
+            chain.doFilter(request, response);
+            return;
+        }
+
         String token = resolveToken(request);
 
-        // [A] 시작 로깅: 헤더 유무/토큰 길이
         logger.info("JWT START path={}, hasAuthHeader={}, tokenLen={}",
-                request.getServletPath(),
+                path,
                 request.getHeader("Authorization") != null,
                 token != null ? token.length() : 0);
 
@@ -49,24 +60,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .parseSignedClaims(token)
                         .getPayload();
 
-                // [B] 파싱 성공 로깅: sub/roles
                 logger.info("JWT OK sub={}, roles={}", claims.getSubject(), claims.get("roles"));
 
                 String email = claims.getSubject();
                 if (email != null) {
                     @SuppressWarnings("unchecked")
                     List<String> roles = claims.get("roles", List.class);
-                    if (roles == null) {
-                        roles = List.of();
-                    }
+                    if (roles == null) roles = List.of();
 
-                    var authorities = roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+                    var authorities = roles.stream()
+                            .map(SimpleGrantedAuthority::new)
+                            .collect(Collectors.toList());
                     UserDetails userDetails = new User(email, "", authorities);
 
                     var auth = new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(auth);
 
-                    // [C] 인증 객체 세팅 로깅
                     logger.info("JWT AUTH SET principal={}, authorities={}", email, authorities);
                 }
             } catch (JwtException e) {

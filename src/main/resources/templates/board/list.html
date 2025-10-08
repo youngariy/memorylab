@@ -136,9 +136,9 @@
                 boardListContainer.innerHTML = '<p>게시글이 없습니다.</p>';
             } else {
                 boardListContainer.innerHTML = items.map(it => {
-                    let thumbnailUrl = '/thumbnails/default.jpg';
-                    if (it.thumbnailStatus === 'READY' && it.thumbnailUrl) {
-                        thumbnailUrl = it.thumbnailUrl;
+                    let thumbnailUrl = '/img/default_thumbnail.jpg'; // 기본 이미지
+                    if (it.thumbnailStatus === 'READY' && it.thumbnailPath) {
+                        thumbnailUrl = it.thumbnailPath;
                     }
 
                     let videoIcon = '';
@@ -158,7 +158,7 @@
                                     <span class="card-title-text">${escapeHtml(it.title)}</span>
                                     <span class="video-icon">${videoIcon}</span>
                                 </h3>
-                                <p class="card-author">${escapeHtml(it.authorNickname)}</p>
+                                <p class="card-author">${escapeHtml(it.author.nickname)}</p>
                             </div>
                             <div class="card-footer">
                                 <div class="card-meta-info">
@@ -180,12 +180,12 @@
 
             // 페이저 렌더링 로직 (기존과 동일)
             const totalPages = Math.max(1, parseInt(data.totalPages ?? 1, 10) || 1);
-            const cur = Math.min(Math.max(0, parseInt(data.number ?? page, 10) || 0), totalPages - 1);
-            const linkTo = (p) => { const sp = new URLSearchParams(location.search); sp.set('page', p); sp.set('size', data.size ?? size); return `?${sp.toString()}`; };
-            const prev = document.createElement('a'); prev.className = 'page'; prev.textContent = '이전'; prev.href = linkTo(Math.max(0, cur - 1)); if (cur === 0) prev.setAttribute('disabled', 'true'); pager.appendChild(prev);
+            const cur = Math.min(Math.max(0, parseInt(data.currentPage ?? page, 10) || 0), totalPages - 1);
+            const linkTo = (p) => { const sp = new URLSearchParams(location.search); sp.set('page', p); sp.set('size', data.pageSize ?? size); return `?${sp.toString()}`; };
+            const prev = document.createElement('a'); prev.className = 'page'; prev.textContent = '이전'; prev.href = linkTo(Math.max(0, cur - 1)); if (data.isFirst) prev.setAttribute('disabled', 'true'); pager.appendChild(prev);
             const windowSize = 5; const start = Math.max(0, cur - Math.floor(windowSize/2)); const end = Math.min(totalPages - 1, start + windowSize - 1);
             for (let p = start; p <= end; p++) { const a = document.createElement('a'); a.className = 'page' + (p === cur ? ' active' : ''); a.textContent = (p + 1); a.href = linkTo(p); pager.appendChild(a); }
-            const next = document.createElement('a'); next.className = 'page'; next.textContent = '다음'; next.href = linkTo(Math.min(totalPages - 1, cur + 1)); if (cur >= totalPages - 1) next.setAttribute('disabled', 'true'); pager.appendChild(next);
+            const next = document.createElement('a'); next.className = 'page'; next.textContent = '다음'; next.href = linkTo(Math.min(totalPages - 1, cur + 1)); if (data.isLast) next.setAttribute('disabled', 'true'); pager.appendChild(next);
 
         } catch (e) {
             boardListContainer.innerHTML = `<p>오류: ${escapeHtml(e.message || e)}</p>`;
