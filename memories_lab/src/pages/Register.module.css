@@ -153,6 +153,22 @@
   margin-bottom: 0.5rem;
 }
 
+.valid {
+  color: #51cf66;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.checking {
+  color: #9ca3af;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-style: italic;
+}
+
 .formGroup {
   display: flex;
   flex-direction: column;

@@ -3,7 +3,7 @@
  * Manages global auth state and provides auth methods
  */
 
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import api from '../services/api';
 import { authEndpoints } from '../services/endpoints';
 import type {
@@ -109,23 +109,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const checkEmailAvailability = async (email: string): Promise<boolean> => {
+  const checkEmailAvailability = useCallback(async (email: string): Promise<boolean> => {
     try {
       await authEndpoints.checkEmail(email);
       return true; // Available
     } catch (error) {
       return false; // Not available
     }
-  };
+  }, []);
 
-  const checkNicknameAvailability = async (nickname: string): Promise<boolean> => {
+  const checkNicknameAvailability = useCallback(async (nickname: string): Promise<boolean> => {
     try {
       await authEndpoints.checkNickname(nickname);
       return true; // Available
     } catch (error) {
       return false; // Not available
     }
-  };
+  }, []);
 
   const refreshUser = async () => {
     if (api.isAuthenticated()) {

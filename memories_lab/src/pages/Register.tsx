@@ -20,16 +20,33 @@ function Register() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [emailValid, setEmailValid] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
   const [nicknameValid, setNicknameValid] = useState(false);
   const [nicknameChecked, setNicknameChecked] = useState(false);
 
   const { sendVerificationCode, verifyCode, register, checkEmailAvailability, checkNicknameAvailability } = useAuth();
   const navigate = useNavigate();
 
-  // Email validation check
+  // Email validation check with proper debouncing and error handling
   useEffect(() => {
     const checkEmail = async () => {
-      if (email && email.includes('@')) {
+      // Reset validation state if email is empty or invalid format
+      if (!email || !email.trim()) {
+        setEmailValid(false);
+        setEmailChecking(false);
+        return;
+      }
+
+      // Basic email format validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        setEmailValid(false);
+        setEmailChecking(false);
+        return;
+      }
+
+      setEmailChecking(true);
+      try {
         const available = await checkEmailAvailability(email);
         setEmailValid(available);
         if (!available) {
@@ -37,6 +54,11 @@ function Register() {
         } else {
           setError('');
         }
+      } catch (err) {
+        setEmailValid(false);
+        setError('이메일 확인 중 오류가 발생했습니다.');
+      } finally {
+        setEmailChecking(false);
       }
     };
 
@@ -180,10 +202,11 @@ function Register() {
                   autoComplete="email"
                   placeholder="이메일을 입력하세요"
                 />
-                {email && emailValid && <span className={styles.valid}>✓ 사용 가능한 이메일입니다.</span>}
+                {emailChecking && <span className={styles.checking}>확인 중...</span>}
+                {!emailChecking && email && emailValid && <span className={styles.valid}>✓ 사용 가능한 이메일입니다.</span>}
               </div>
 
-              <button type="submit" className={styles.submitButton} disabled={isLoading || !emailValid}>
+              <button type="submit" className={styles.submitButton} disabled={isLoading || !emailValid || emailChecking}>
                 {isLoading ? '전송 중...' : '인증 코드 받기'}
               </button>
             </form>
