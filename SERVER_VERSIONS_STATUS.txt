@@ -1,0 +1,116 @@
+==================================================
+SERVER VERSIONS AND STATUS
+Generated: $(date)
+Server: 54.180.3.34 (AWS Lightsail)
+==================================================
+
+=== SYSTEM INFO ===
+Linux ip-172-26-1-80.ap-northeast-2.compute.internal 6.1.147-172.266.amzn2023.x86_64 #1 SMP PREEMPT_DYNAMIC Thu Aug  7 19:30:40 UTC 2025 x86_64 x86_64 x86_64 GNU/Linux
+NAME="Amazon Linux"
+VERSION="2023"
+ID="amzn"
+ID_LIKE="fedora"
+VERSION_ID="2023"
+
+=== JAVA VERSION ===
+openjdk version "21.0.8" 2025-07-15 LTS
+OpenJDK Runtime Environment Corretto-21.0.8.9.1 (build 21.0.8+9-LTS)
+OpenJDK 64-Bit Server VM Corretto-21.0.8.9.1 (build 21.0.8+9-LTS, mixed mode, sharing)
+
+=== OPEN PORTS ===
+State  Recv-Q Send-Q      Local Address:Port  Peer Address:PortProcess                                                                                  
+LISTEN 0      511               0.0.0.0:443        0.0.0.0:*    users:(("nginx",pid=2109697,fd=9),("nginx",pid=2109696,fd=9),("nginx",pid=1882220,fd=9))
+LISTEN 0      511               0.0.0.0:80         0.0.0.0:*    users:(("nginx",pid=2109697,fd=8),("nginx",pid=2109696,fd=8),("nginx",pid=1882220,fd=8))
+LISTEN 0      151                     *:3306             *:*    users:(("mysqld",pid=1708,fd=24))                                                       
+LISTEN 0      100    [::ffff:127.0.0.1]:8080             *:*    users:(("java",pid=2169316,fd=31))                                                      
+
+=== SYSTEMD SERVICE STATUS ===
+● memorylab.service - MemoryLab Spring Boot
+     Loaded: loaded (/etc/systemd/system/memorylab.service; enabled; preset: disabled)
+    Drop-In: /etc/systemd/system/memorylab.service.d
+             └─override.conf, path.conf
+     Active: active (running) since Thu 2025-10-09 01:14:39 KST; 11min ago
+   Main PID: 2169316 (java)
+      Tasks: 44 (limit: 2253)
+     Memory: 389.4M
+        CPU: 50.307s
+     CGroup: /system.slice/memorylab.service
+             └─2169316 /usr/bin/java -Dfile.encoding=UTF-8 -Duser.timezone=Asia/Seoul -jar /home/ec2-user/app/current/app.jar
+
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.version,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.view_count,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.visibility
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:     from
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         board b1_0
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:     where
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.thumbnail_status in (?)
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         and b1_0.retry_count<?
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:     limit
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         ?, ?
+
+=== NGINX STATUS ===
+● nginx.service - The nginx HTTP and reverse proxy server
+     Loaded: loaded (/usr/lib/systemd/system/nginx.service; enabled; preset: disabled)
+     Active: active (running) since Sat 2025-10-04 23:19:31 KST; 4 days ago
+   Main PID: 1882220 (nginx)
+      Tasks: 3 (limit: 2253)
+     Memory: 6.7M
+        CPU: 13.226s
+     CGroup: /system.slice/nginx.service
+             ├─1882220 "nginx: master process /usr/sbin/nginx"
+             ├─2109696 "nginx: worker process"
+             └─2109697 "nginx: worker process"
+
+Oct 07 21:18:56 ip-172-26-1-80.ap-northeast-2.compute.internal systemd[1]: Reloaded nginx.service - The nginx HTTP and reverse proxy server.
+Oct 07 21:34:01 ip-172-26-1-80.ap-northeast-2.compute.internal systemd[1]: Reloading nginx.service - The nginx HTTP and reverse proxy server...
+Oct 07 21:34:01 ip-172-26-1-80.ap-northeast-2.compute.internal systemd[1]: Reloaded nginx.service - The nginx HTTP and reverse proxy server.
+Oct 07 21:37:40 ip-172-26-1-80.ap-northeast-2.compute.internal systemd[1]: Reloading nginx.service - The nginx HTTP and reverse proxy server...
+Oct 07 21:37:40 ip-172-26-1-80.ap-northeast-2.compute.internal systemd[1]: Reloaded nginx.service - The nginx HTTP and reverse proxy server.
+Oct 07 21:52:50 ip-172-26-1-80.ap-northeast-2.compute.internal systemd[1]: Reloading nginx.service - The nginx HTTP and reverse proxy server...
+Oct 07 21:52:50 ip-172-26-1-80.ap-northeast-2.compute.internal nginx[2109185]: nginx: [warn] the "listen ... http2" directive is deprecated, use the "http2" directive instead in /etc/nginx/conf.d/memorylab.conf:8
+Oct 07 21:52:50 ip-172-26-1-80.ap-northeast-2.compute.internal systemd[1]: Reloaded nginx.service - The nginx HTTP and reverse proxy server.
+
+=== NGINX CONFIG TEST ===
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+
+=== DISK USAGE ===
+Filesystem        Size  Used Avail Use% Mounted on
+/dev/nvme0n1p1     60G   15G   46G  25% /
+
+=== MEMORY USAGE ===
+               total        used        free      shared  buff/cache   available
+Mem:           1.9Gi       808Mi        91Mi        69Mi       1.0Gi       869Mi
+Swap:          2.0Gi       558Mi       1.5Gi
+
+=== RECENT JOURNAL LOGS (last 30 lines) ===
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.external_error_detail,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.external_result_url,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.external_status,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.gpu_error_message,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         (select
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:             count(1)
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         from
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:             board_like bl
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         where
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:             bl.board_id = b1_0.id),
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.modified_at,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.original_video_path,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.ply_path,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.retry_count,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.status,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.thumbnail_path,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.thumbnail_status,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.title,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.transcode_status,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.user_id,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.version,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.view_count,
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.visibility
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:     from
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         board b1_0
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:     where
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         b1_0.thumbnail_status in (?)
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         and b1_0.retry_count<?
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:     limit
+Oct 09 01:25:29 ip-172-26-1-80.ap-northeast-2.compute.internal java[2169316]:         ?, ?

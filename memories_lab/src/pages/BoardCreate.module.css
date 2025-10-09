@@ -1,0 +1,26 @@
+.boardCreateContainer {
+  display: flex;
+  gap: 40px;
+  padding: 40px;
+}
+
+.boardCreateContent {
+  width: 100%;
+  padding: 60px;
+  background-color: #35353a;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .boardCreateContainer {
+    display: flex;
+    flex-direction: column;
+    padding: 0 30px;
+    gap: 0;
+  }
+
+  .boardCreateContent {
+    padding: 0;
+    background-color: transparent;
+  }
+}

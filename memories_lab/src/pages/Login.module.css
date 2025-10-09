@@ -1,0 +1,134 @@
+.loginContainer {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.loginContent {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 80px);
+  padding: 2rem 1rem;
+}
+
+.loginBox {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  padding: 3rem 2.5rem;
+  width: 100%;
+  max-width: 440px;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a202c;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.error {
+  padding: 0.75rem 1rem;
+  background: #fee;
+  border-left: 4px solid #f44336;
+  border-radius: 4px;
+  color: #c62828;
+  font-size: 0.875rem;
+}
+
+.info {
+  padding: 0.75rem 1rem;
+  background: #e3f2fd;
+  border-left: 4px solid #2196f3;
+  border-radius: 4px;
+  color: #1565c0;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.info p {
+  margin: 0;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.formGroup label {
+  font-weight: 600;
+  color: #4a5568;
+  font-size: 0.875rem;
+}
+
+.formGroup input {
+  padding: 0.875rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.submitButton {
+  padding: 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: 0.5rem;
+}
+
+.submitButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.submitButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.links {
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #718096;
+  font-size: 0.875rem;
+}
+
+.links a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.links a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .loginBox {
+    padding: 2rem 1.5rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+}

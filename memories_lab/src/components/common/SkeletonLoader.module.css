@@ -1,0 +1,97 @@
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #2a2a2f 0%,
+    #35353a 50%,
+    #2a2a2f 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton.text {
+  height: 16px;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.skeleton.rect {
+  width: 100%;
+  height: 100px;
+}
+
+.skeleton.circle {
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+}
+
+/* Board card skeleton */
+.boardCardSkeleton {
+  background: #35353a;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 0;
+}
+
+.cardContent {
+  padding: 16px;
+}
+
+.cardFooter {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+/* Comment skeleton */
+.commentSkeleton {
+  background: #2a2a2f;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.commentHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Board detail skeleton */
+.boardDetailSkeleton {
+  background: #35353a;
+  border-radius: 8px;
+  padding: 40px;
+}
+
+.metaInfo {
+  display: flex;
+  gap: 16px;
+  margin: 16px 0 24px 0;
+}
+
+@media (max-width: 768px) {
+  .boardDetailSkeleton {
+    padding: 20px;
+  }
+
+  .cardContent {
+    padding: 12px;
+  }
+
+  .commentSkeleton {
+    padding: 12px;
+  }
+}

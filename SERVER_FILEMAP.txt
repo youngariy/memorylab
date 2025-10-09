@@ -1,0 +1,85 @@
+==================================================
+MEMORYLAB PROJECT - SERVER FILE STRUCTURE
+Generated: $(date)
+Server: 54.180.3.34 (AWS Lightsail - Amazon Linux 2023)
+==================================================
+
+=== RELEASES DIRECTORY ===
+
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  4 18:46 /home/ec2-user/app/releases/20250904_185306/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  5 23:18 /home/ec2-user/app/releases/20250905_231825/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  5 23:38 /home/ec2-user/app/releases/20250905_233856/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  5 23:40 /home/ec2-user/app/releases/20250905_234048/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  5 23:42 /home/ec2-user/app/releases/20250905_234253/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  6 00:10 /home/ec2-user/app/releases/20250906_001038/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  6 01:05 /home/ec2-user/app/releases/20250906_010558/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  6 01:21 /home/ec2-user/app/releases/20250906_012118/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  6 23:27 /home/ec2-user/app/releases/20250906_232726/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  6 23:57 /home/ec2-user/app/releases/20250906_235758/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  7 00:06 /home/ec2-user/app/releases/20250907_000654/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  7 00:22 /home/ec2-user/app/releases/20250907_002216/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  7 17:29 /home/ec2-user/app/releases/20250907_172939/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  7 17:48 /home/ec2-user/app/releases/20250907_174828/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  7 18:06 /home/ec2-user/app/releases/20250907_180651/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  7 20:59 /home/ec2-user/app/releases/20250907_210005/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  7 21:28 /home/ec2-user/app/releases/20250907_212827/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 60M Sep  7 22:09 /home/ec2-user/app/releases/20250907_220938/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 14 15:20 /home/ec2-user/app/releases/20250914_152043/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 14 16:27 /home/ec2-user/app/releases/20250914_162719/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 15 19:28 /home/ec2-user/app/releases/20250915_192852/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 12:53 /home/ec2-user/app/releases/20250916_125319/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 13:03 /home/ec2-user/app/releases/20250916_130351/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 13:37 /home/ec2-user/app/releases/20250916_133716/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 14:06 /home/ec2-user/app/releases/20250916_140656/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 14:29 /home/ec2-user/app/releases/20250916_142908/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 14:43 /home/ec2-user/app/releases/20250916_144337/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 14:54 /home/ec2-user/app/releases/20250916_145443/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 15:50 /home/ec2-user/app/releases/20250916_155029/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 15:57 /home/ec2-user/app/releases/20250916_155755/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 16:02 /home/ec2-user/app/releases/20250916_160210/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 16:16 /home/ec2-user/app/releases/20250916_161653/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 16 16:33 /home/ec2-user/app/releases/20250916_163323/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 18 14:55 /home/ec2-user/app/releases/20250918_145556/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 18 15:14 /home/ec2-user/app/releases/20250918_151438/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 18 15:21 /home/ec2-user/app/releases/20250918_152210/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 18 15:36 /home/ec2-user/app/releases/20250918_153613/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 18 16:50 /home/ec2-user/app/releases/20250918_165052/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 18 17:28 /home/ec2-user/app/releases/20250918_172903/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 19 17:11 /home/ec2-user/app/releases/20250919_171208/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 20 14:56 /home/ec2-user/app/releases/20250920_145637/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 54M Sep 20 16:12 /home/ec2-user/app/releases/20250920_161212/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 65M Sep 21 13:51 /home/ec2-user/app/releases/20250921_135148/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 65M Sep 21 14:09 /home/ec2-user/app/releases/20250921_140959/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 65M Sep 21 14:20 /home/ec2-user/app/releases/20250921_142037/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 65M Sep 21 14:24 /home/ec2-user/app/releases/20250921_142417/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 65M Sep 21 15:32 /home/ec2-user/app/releases/20250921_153216/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 65M Sep 21 15:52 /home/ec2-user/app/releases/20250921_155228/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 66M Sep 21 16:55 /home/ec2-user/app/releases/20250921_165527/memorylab.jar
+-rw-rw-r--. 1 ec2-user ec2-user 66M Sep 21 16:59 /home/ec2-user/app/releases/20250921_165911/memorylab.jar
+
+=== CURRENT SYMLINK ===
+total 28
+-rw-r--r--. 1 ec2-user ec2-user     0 Aug 29 23:20 C:UsersmeDesktopmemorylab_dump.sql
+-rw-r--r--. 1 ec2-user ec2-user     0 Aug 29 23:21 Rebuild
+-rw-r--r--. 1 ec2-user ec2-user     0 Aug 29 23:21 Rename로
+lrwxrwxrwx. 1 ec2-user ec2-user    57 Aug 31 04:02 app. -> /home/ec2-user/app/releases/20250831_040158/memorylab.jar
+lrwxrwxrwx. 1 ec2-user ec2-user    57 Oct  9 01:14 app.jar -> /home/ec2-user/app/releases/20251009_011428/memorylab.jar
+-rw-r--r--. 1 ec2-user ec2-user 21824 Aug 29 23:21 app.out
+-rw-r--r--. 1 root     root        25 Sep  7 00:56 application.properties
+lrwxrwxrwx. 1 ec2-user ec2-user    27 Aug 29 23:21 releases -> /home/ec2-user/app/releases
+/home/ec2-user/app/releases/20251009_011428/memorylab.jar
+
+=== FRONTEND STATIC FILES ===
+
+=== UPLOADS & THUMBNAILS ===
+/srv/memorylab
+/srv/memorylab/uploads
+/srv/memorylab/uploads/ply
+/srv/memorylab/uploads/videos
+/srv/memorylab/uploads/thumbnails
+/srv/memorylab/tmp
+/srv/memorylab/static
+/srv/memorylab/static/img
+4.0K	/srv/memorylab/static
+0	/srv/memorylab/tmp
+110M	/srv/memorylab/uploads

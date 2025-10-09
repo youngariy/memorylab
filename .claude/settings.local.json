@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git log:*)",
+      "Bash(cat:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npx tsc:*)",
+      "Bash(CI=true pnpm install)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" https://mlab.snowytiger.me/api/auth/check-email?email=test@example.com)",
+      "Bash(timeout 60 ./gradlew compileJava:*)",
+      "Bash(./gradlew:*)",
+      "Bash(timeout 60 ./gradlew clean:*)",
+      "Bash(javac:*)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)",
+      "Bash(npm run build:*)",
+      "Bash(find:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

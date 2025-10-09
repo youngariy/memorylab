@@ -1,0 +1,61 @@
+==================================================
+CONFIG LOCATIONS - LOCAL (Windows)
+Generated: 2025-10-09
+==================================================
+
+=== FRONTEND CONFIG FILES ===
+
+./memories_lab/package.json
+./memories_lab/vite.config.dev.ts
+./memories_lab/vite.config.prod.ts
+./memories_lab/tsconfig.json
+./memories_lab/tsconfig.node.json
+./memories_lab/.env (if exists - not committed)
+
+Key Frontend Settings:
+- Dev proxy: http://localhost:8080 (for local backend)
+- Production proxy: https://mlab.snowytiger.me
+- Port: 5173 (Vite dev server)
+
+=== BACKEND CONFIG FILES ===
+
+./memorylab/build.gradle
+./memorylab/settings.gradle
+./memorylab/src/main/resources/application.yml
+./memorylab/src/main/resources/application-dev.yml (if exists)
+./memorylab/src/main/resources/application-prod.yml (if exists)
+
+Backend Configuration Classes:
+- ./memorylab/src/main/java/com/memorylab/config/WebMvcConfig.java
+- ./memorylab/src/main/java/com/memorylab/config/SecurityConfig.java (if exists)
+
+=== SECRET FILES (PATHS ONLY - DO NOT COMMIT) ===
+
+./memorylab/Ariy-key.pem (AWS Lightsail SSH key)
+.env files (if any - database credentials, JWT secrets)
+application-prod.yml (production database credentials)
+
+=== ENVIRONMENT VARIABLES REQUIRED ===
+
+Backend (Spring Boot):
+- SPRING_DATASOURCE_URL (MySQL JDBC connection string)
+- SPRING_DATASOURCE_USERNAME
+- SPRING_DATASOURCE_PASSWORD
+- JWT_SECRET (for authentication)
+- SPRING_MAIL_USERNAME (for email verification)
+- SPRING_MAIL_PASSWORD
+- GPU_WEBHOOK_SECRET
+
+Frontend:
+- None required for local dev (uses Vite proxy)
+
+=== BUILD OUTPUT DIRECTORIES ===
+
+Frontend:
+- ./memories_lab/dist/ (production build)
+- ./memories_lab/node_modules/
+
+Backend:
+- ./memorylab/build/ (Gradle build output)
+- ./memorylab/build/libs/ (JAR files)
+- ./memorylab/.gradle/ (Gradle cache)

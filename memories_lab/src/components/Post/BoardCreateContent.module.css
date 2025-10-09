@@ -1,0 +1,308 @@
+.boardCreateContent {
+  margin: 0 auto;
+  background: #35353a;
+  border-radius: 8px;
+  padding: 40px;
+}
+
+.title {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0 0 40px 0;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionTitle {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+/* 파일 업로드 영역 */
+.uploadArea {
+  border-radius: 8px;
+  padding: 60px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #2a2a2f;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.uploadArea.dragOver {
+  border-color: #007bff;
+  background: #2e2e33;
+  transform: scale(1.02);
+}
+
+.uploadArea.hasFile {
+  border-color: #28a745;
+  background: #2a3d2a;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.uploadIcon {
+  color: #888;
+  margin-bottom: 16px;
+}
+
+.uploadText {
+  color: #ccc;
+  font-size: 16px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.uploadSubtext {
+  color: #888;
+  font-size: 14px;
+}
+
+.fileInfo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.fileName {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.fileSize {
+  color: #28a745;
+  font-size: 14px;
+}
+
+.removeFileButton {
+  margin-top: 12px;
+  background: #ff4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.removeFileButton:hover {
+  background: #cc0000;
+}
+
+/* Progress bar */
+.progressContainer {
+  margin-top: 16px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 24px;
+  background: #2a2a2f;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+  transition: width 0.3s ease;
+  border-radius: 12px;
+}
+
+.progressText {
+  text-align: center;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+}
+
+/* Error message */
+.errorMessage {
+  background: #ff4444;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* Character count */
+.charCount {
+  text-align: right;
+  color: #888;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* 입력 필드들 */
+.titleInput {
+  width: 100%;
+  padding: 16px;
+  background: #2a2a2f;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+}
+
+.titleInput:focus {
+  border-color: #007bff;
+}
+
+.titleInput::placeholder {
+  color: #888;
+}
+
+.selectInput {
+  width: 100%;
+  padding: 16px;
+  background: #2a2a2f;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url('@/assets/arrow_down.svg');
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  background-size: 12px;
+}
+
+.selectInput:focus {
+  border-color: #007bff;
+}
+
+.descriptionInput {
+  width: 100%;
+  padding: 16px;
+  background: #2a2a2f;
+  border: 1px solid #555;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  outline: none;
+  resize: none;
+  min-height: 120px;
+  line-height: 1.5;
+  font-family: inherit;
+}
+
+.descriptionInput:focus {
+  border-color: #007bff;
+}
+
+.descriptionInput::placeholder {
+  color: #888;
+}
+
+/* 버튼 컨테이너 */
+.buttonContainer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.cancelButton {
+  width: 200px;
+  height: 54px;
+  padding: 18px 0;
+  background: #000;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+  color: #ccc;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 18px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.submitButton {
+  width: 200px;
+  height: 54px;
+  padding: 18px 0;
+  background: #007bff;
+  border: none;
+  border-radius: 6px;
+  border: none;
+  outline: none;
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 18px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+/* 모바일 반응형 */
+@media (max-width: 768px) {
+  .container {
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .uploadArea {
+    padding: 40px 20px;
+    min-height: 150px;
+  }
+
+  .title {
+    display: none;
+  }
+
+  .uploadText {
+    font-size: 14px;
+  }
+
+  .buttonContainer {
+    margin-top: 0;
+  }
+
+  .cancelButton,
+  .submitButton {
+    width: 100%;
+    padding: 16px;
+    font-size: 18px;
+  }
+
+  .section {
+    gap: 8px;
+  }
+
+  .titleInput,
+  .selectInput,
+  .descriptionInput {
+    padding: 14px;
+  }
+}

@@ -1,0 +1,157 @@
+.boardContainer {
+  color: white;
+  border-radius: 16px;
+  margin: 16px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.boardContainer:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.boardContainer:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+.boardContainer:active {
+  transform: translateY(-2px);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: normal;
+  margin: 0;
+  color: white;
+}
+
+.writeButton {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.writeButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.imageContainer {
+  margin-bottom: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  min-height: 200px;
+}
+
+.postImage {
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: cover;
+  display: block;
+}
+
+.placeholder {
+  width: 100%;
+  height: 200px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statusBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: rgba(102, 126, 234, 0.2);
+  border-radius: 8px;
+  color: #a0aec0;
+  font-size: 0.875rem;
+}
+
+.statusBadge.error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.category {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: rgba(102, 126, 234, 0.2);
+  color: #667eea;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.content {
+  margin-bottom: 20px;
+}
+
+.contentText {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e0e0e0;
+  margin: 0;
+  word-break: break-all;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  font-size: 12px;
+  color: #888;
+}
+
+.date {
+  color: #888;
+}
+
+.statsRight {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.statIcon {
+  font-size: 14px;
+}
+
+.statCount {
+  color: #888;
+}
+
+.separator {
+  color: #555;
+  margin: 0 4px;
+}

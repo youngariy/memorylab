@@ -1,0 +1,27 @@
+==================================================
+SERVER CONFIG LOCATIONS
+Generated: $(date)
+==================================================
+
+=== NGINX CONFIGURATION ===
+
+-rw-r--r--. 1 root root 1.8K Oct  7 22:08 /etc/nginx/conf.d/memorylab.conf
+-rw-r--r--. 1 root root 1.9K Sep 16 13:17 /etc/nginx/nginx.conf
+
+=== SYSTEMD SERVICE ===
+-rw-r--r--. 1 root root 364 Sep  4 13:51 /etc/systemd/system/memorylab.service
+
+/etc/systemd/system/memorylab.service.d:
+total 12K
+-rw-r--r--. 1 root root 2.0K Oct  7 17:37 override.conf
+-rw-r--r--. 1 root root  521 Sep  4 23:29 override.conf.bak.1758172768
+-rw-r--r--. 1 root root   56 Oct  4 02:08 path.conf
+total 12K
+-rw-r--r--. 1 root root 2.0K Oct  7 17:37 override.conf
+-rw-r--r--. 1 root root  521 Sep  4 23:29 override.conf.bak.1758172768
+-rw-r--r--. 1 root root   56 Oct  4 02:08 path.conf
+
+=== APPLICATION CONFIGS (paths only) ===
+/home/ec2-user/app/current/application.properties
+
+=== SSL CERTIFICATES ===

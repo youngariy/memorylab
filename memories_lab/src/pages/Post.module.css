@@ -1,0 +1,32 @@
+.postContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  padding: 40px;
+}
+
+.postContent {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  background-color: #35353a;
+  padding: 60px;
+  border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+  .postContainer {
+    display: flex;
+    flex-direction: column;
+    padding: 0 30px;
+  }
+
+  .postContent {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    background-color: transparent;
+    padding: 0;
+    border-radius: 8px;
+  }
+}

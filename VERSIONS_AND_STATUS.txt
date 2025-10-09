@@ -1,0 +1,44 @@
+==================================================
+VERSIONS AND STATUS - LOCAL (Windows)
+Generated: 2025-10-09
+==================================================
+
+=== JAVA VERSION ===
+java version "21.0.8" 2025-07-15 LTS
+Java(TM) SE Runtime Environment (build 21.0.8+12-LTS-250)
+Java HotSpot(TM) 64-Bit Server VM (build 21.0.8+12-LTS-250, mixed mode, sharing)
+
+=== GRADLE VERSION ===
+Gradle 8.10
+
+Build time:    2024-08-14 11:07:45 UTC
+Revision:      <none>
+
+Kotlin:        1.9.24
+Groovy:        3.0.22
+Ant:           Apache Ant(TM) version 1.10.14 compiled on August 16 2023
+Launcher JVM:  21.0.8 (Oracle Corporation 21.0.8+12-LTS-250)
+Daemon JVM:    C:\Program Files\Java\jdk-21 (no JDK specified, using current Java home)
+OS:            Windows 11 10.0 amd64
+
+=== NODE & NPM VERSIONS ===
+Node: v22.20.0
+NPM:  10.9.3
+
+=== GIT STATUS (memorylab backend) ===
+Branch: main
+Status: Clean working tree (no uncommitted changes)
+
+=== PROJECT STRUCTURE ===
+Frontend: ./memories_lab (React/TypeScript/Vite)
+Backend:  ./memorylab (Spring Boot 3.3.1 / Java 21 / Gradle)
+
+Approximate sizes:
+- Frontend: ~50 MB (excluding node_modules)
+- Backend:  ~15 MB (excluding build artifacts)
+
+=== LOCAL DEV SERVERS ===
+Frontend: Running at http://localhost:5173 (Vite)
+Backend:  Ready to start (requires database connection)
+188M	memories_lab
+90M	memorylab

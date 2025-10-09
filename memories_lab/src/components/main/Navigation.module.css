@@ -1,0 +1,117 @@
+.navigation {
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  width: 150px;
+  height: 30px;
+}
+
+.searchContainer {
+  margin-top: 24px;
+}
+
+/* 유저 정보 */
+.userInfo {
+  margin-top: auto;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  padding: 15px 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.userAvatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 14px;
+}
+
+.avatarIcon {
+  font-size: 24px;
+  color: #ccc;
+}
+
+.userDetails {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.userName {
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.userEmail {
+  color: #b3b3b3;
+  font-size: 14px;
+}
+
+/* 메뉴 항목들 */
+.menuItems {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  margin-top: 40px;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  border: none;
+  padding: 8px 0;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.menuItem:hover {
+  background: rgba(255, 255, 255, 0.05);
+  padding-left: 10px;
+}
+
+.menuItem:focus {
+  outline: 2px solid rgba(102, 126, 234, 0.5);
+  outline-offset: 2px;
+}
+
+.menuIcon {
+  width: 28px;
+  height: 28px;
+}
+
+/* 로그아웃 섹션 */
+.logoutSection {
+  margin-top: 35px;
+  padding-top: 30px;
+  border-top: 1px solid #35353a;
+}
+
+.logoutButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 0;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}

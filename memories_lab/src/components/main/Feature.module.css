@@ -1,0 +1,179 @@
+.feature {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.backgroundImage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('@/assets/main_bg1.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
+}
+
+.container {
+  position: relative;
+  padding: 0 120px;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  min-height: 100vh;
+  padding-bottom: 160px;
+}
+
+.content {
+  max-width: 600px;
+}
+
+.title {
+  font-size: 56px;
+  color: #fff;
+  font-weight: 400;
+  line-height: 48px;
+  margin-bottom: 32px;
+}
+
+.description {
+  font-size: 18px;
+  color: #fff;
+  line-height: 26px;
+  font-weight: 400;
+  margin-bottom: 48px;
+  font-family: 'Noto Sans CJK KR';
+  opacity: 0.8;
+}
+
+.detailButton {
+  background: #1a1a1c;
+  border: none;
+  color: #fff;
+  padding: 20px 40px;
+  border-radius: 200px;
+  font-size: 18px;
+  font-weight: 400;
+  cursor: pointer;
+  align-self: flex-start;
+}
+
+.mobileButton {
+  display: none;
+  background: #1a1a1c;
+  border: none;
+  color: #fff;
+  padding: 16px 32px;
+  border-radius: 200px;
+  font-size: 16px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.infoBox {
+  max-width: 400px;
+}
+
+.infoText {
+  font-size: 18px;
+  color: #bcbcbc;
+  font-weight: 500;
+  margin: 0;
+}
+
+.mobileBottomText {
+  display: none;
+}
+
+.mobileBottomText p {
+  font-size: 16px;
+  color: #fff;
+  line-height: 24px;
+  font-weight: 400;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.mobileBr {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: space-between;
+    text-align: left;
+    padding: 60px 30px;
+    gap: 0;
+  }
+
+  .content {
+    max-width: 100%;
+    margin-bottom: 0;
+  }
+
+  .title {
+    font-size: 32px;
+    line-height: 40px;
+    margin-bottom: 24px;
+  }
+
+  .description {
+    font-size: 14px;
+    line-height: 24px;
+    margin-bottom: 0;
+    opacity: 0.8;
+  }
+
+  .detailButton {
+    display: none;
+  }
+
+  .mobileButton {
+    display: block;
+    align-self: flex-start;
+  }
+
+  .infoBox {
+    display: none;
+  }
+
+  .infoText {
+    font-size: 14px;
+  }
+
+  .mobileBottomText {
+    display: block;
+    margin-top: auto;
+    margin-bottom: 20px;
+  }
+
+  .mobileBottomText p {
+    font-size: 16px;
+    line-height: 24px;
+    opacity: 0.8;
+  }
+
+  .mobileBr {
+    display: block;
+  }
+}

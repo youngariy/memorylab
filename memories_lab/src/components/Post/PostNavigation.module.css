@@ -1,0 +1,57 @@
+.postNavigation {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.postNavigationLeft {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.postNavigationLeftTitle {
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+}
+
+.postNavigationRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchInput {
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.searchInput:focus {
+  border-color: #0000ff;
+}
+
+.searchInput::placeholder {
+  color: #999;
+}
+
+.createButton {
+  height: 30px;
+  padding: 3px 14px;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  line-height: 24px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #0000ff;
+  border-radius: 6px;
+  cursor: pointer;
+}
