@@ -87,7 +87,17 @@ function MobileNavigation() {
             >
               <div className={styles.sidebarContent}>
                 {/* 유저 정보 */}
-                <div className={styles.userInfo}>
+                <div
+                  className={styles.userInfo}
+                  onClick={() => {
+                    if (isAuthenticated) {
+                      handleNavigation('/profile');
+                    } else {
+                      handleNavigation('/login');
+                    }
+                  }}
+                  style={{ cursor: 'pointer' }}
+                >
                   <div className={styles.userAvatar}>
                     <img src={userProfile} alt="userProfile" />
                   </div>

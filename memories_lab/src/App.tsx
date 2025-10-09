@@ -10,6 +10,7 @@ import Post from './pages/Post';
 import BoardDetail from './pages/BoardDetail';
 import BoardCreate from './pages/BoardCreate';
 import BoardEdit from './pages/BoardEdit';
+import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import styles from './App.module.css';
 
@@ -52,6 +53,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <BoardEdit />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

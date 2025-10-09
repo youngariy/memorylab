@@ -96,7 +96,17 @@ function Navigation() {
         )}
       </nav>
 
-      <div className={styles.userInfo}>
+      <div
+        className={styles.userInfo}
+        onClick={() => {
+          if (isAuthenticated) {
+            navigate('/profile');
+          } else {
+            navigate('/login');
+          }
+        }}
+        style={{ cursor: 'pointer' }}
+      >
         <div className={styles.userAvatar}>
           <img src={userProfile} alt="userProfile" />
         </div>
