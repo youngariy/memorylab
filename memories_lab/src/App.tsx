@@ -9,6 +9,7 @@ import Register from './pages/Register';
 import Post from './pages/Post';
 import BoardDetail from './pages/BoardDetail';
 import BoardCreate from './pages/BoardCreate';
+import BoardEdit from './pages/BoardEdit';
 import NotFound from './pages/NotFound';
 import styles from './App.module.css';
 
@@ -43,6 +44,14 @@ function AppRoutes() {
             element={
               <ProtectedRoute>
                 <BoardCreate />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/post/:id/edit"
+            element={
+              <ProtectedRoute>
+                <BoardEdit />
               </ProtectedRoute>
             }
           />

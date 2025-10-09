@@ -17,6 +17,7 @@ import type {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isLoading: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
   register: (data: RegisterRequest) => Promise<void>;
@@ -39,6 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!user && api.isAuthenticated();
+  const isAdmin = !!user && user.roles.includes('ROLE_ADMIN');
 
   // Fetch current user on mount if token exists
   useEffect(() => {
@@ -142,6 +144,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       value={{
         user,
         isAuthenticated,
+        isAdmin,
         isLoading,
         login,
         register,

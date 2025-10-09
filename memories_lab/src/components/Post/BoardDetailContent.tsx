@@ -18,7 +18,7 @@ import replyIcon from '@/assets/reply.svg';
 export default function BoardDetailContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAdmin } = useAuth();
 
   const [board, setBoard] = useState<BoardDetail | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -111,6 +111,43 @@ export default function BoardDetailContent() {
       console.error('Failed to toggle like:', err);
       alert('좋아요 처리에 실패했습니다.');
     }
+  };
+
+  // Handle board delete
+  const handleBoardDelete = async () => {
+    if (!board) return;
+
+    const isOwner = user?.id === board.authorId;
+    if (!isAdmin && !isOwner) {
+      alert('삭제 권한이 없습니다.');
+      return;
+    }
+
+    if (!confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      await boardEndpoints.delete(board.id);
+      alert('게시글이 삭제되었습니다.');
+      navigate('/post');
+    } catch (err) {
+      console.error('Failed to delete board:', err);
+      alert('게시글 삭제에 실패했습니다.');
+    }
+  };
+
+  // Handle board edit
+  const handleBoardEdit = () => {
+    if (!board) return;
+
+    const isOwner = user?.id === board.authorId;
+    if (!isAdmin && !isOwner) {
+      alert('수정 권한이 없습니다.');
+      return;
+    }
+
+    navigate(`/post/${board.id}/edit`);
   };
 
   // Handle comment submit
@@ -256,6 +293,7 @@ export default function BoardDetailContent() {
   // Render single comment
   const renderSingleComment = (comment: Comment, isReply: boolean = false) => {
     const isOwner = user?.id === comment.userId;
+    const canModerate = isOwner || isAdmin;
     const isEditing = editingCommentId === comment.id;
 
     return (
@@ -299,15 +337,17 @@ export default function BoardDetailContent() {
           ) : (
             <>
               <p className={styles.commentContent}>{comment.content}</p>
-              {isOwner && (
+              {canModerate && (
                 <div className={styles.commentActions}>
-                  <button
-                    type="button"
-                    className={styles.commentButton}
-                    onClick={() => handleEditClick(comment)}
-                  >
-                    수정
-                  </button>
+                  {isOwner && (
+                    <button
+                      type="button"
+                      className={styles.commentButton}
+                      onClick={() => handleEditClick(comment)}
+                    >
+                      수정
+                    </button>
+                  )}
                   <button
                     type="button"
                     className={styles.commentButton}
@@ -432,19 +472,40 @@ export default function BoardDetailContent() {
             <h1 className={styles.title}>{board.title}</h1>
           </div>
 
-          <button
-            type="button"
-            onClick={handleLike}
-            className={styles.likeButton}
-            disabled={!isAuthenticated}
-            style={{
-              opacity: board.isLikedByCurrentUser ? 1 : 0.6,
-              fontWeight: board.isLikedByCurrentUser ? 'bold' : 'normal',
-            }}
-          >
-            <img src={heartIcon} alt="heart icon" />
-            <span>{board.isLikedByCurrentUser ? '좋아요 취소' : '좋아요'}</span>
-          </button>
+          <div className={styles.boardActions}>
+            <button
+              type="button"
+              onClick={handleLike}
+              className={styles.likeButton}
+              disabled={!isAuthenticated}
+              style={{
+                opacity: board.isLikedByCurrentUser ? 1 : 0.6,
+                fontWeight: board.isLikedByCurrentUser ? 'bold' : 'normal',
+              }}
+            >
+              <img src={heartIcon} alt="heart icon" />
+              <span>{board.isLikedByCurrentUser ? '좋아요 취소' : '좋아요'}</span>
+            </button>
+
+            {(user?.id === board.authorId || isAdmin) && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleBoardEdit}
+                  className={styles.editButton}
+                >
+                  수정
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBoardDelete}
+                  className={styles.deleteButton}
+                >
+                  삭제
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Author info */}
