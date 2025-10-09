@@ -21,6 +21,7 @@ function Register() {
 
   const [emailValid, setEmailValid] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
+  const [emailError, setEmailError] = useState('');
   const [nicknameValid, setNicknameValid] = useState(false);
   const [nicknameChecked, setNicknameChecked] = useState(false);
 
@@ -30,6 +31,9 @@ function Register() {
   // Email validation check with proper debouncing and error handling
   useEffect(() => {
     const checkEmail = async () => {
+      // Clear email-specific errors when email changes
+      setEmailError('');
+
       // Reset validation state if email is empty or invalid format
       if (!email || !email.trim()) {
         setEmailValid(false);
@@ -42,21 +46,24 @@ function Register() {
       if (!emailRegex.test(email)) {
         setEmailValid(false);
         setEmailChecking(false);
+        setEmailError('올바른 이메일 형식이 아닙니다.');
         return;
       }
 
       setEmailChecking(true);
       try {
         const available = await checkEmailAvailability(email);
+        console.log(`Email ${email} availability:`, available);
         setEmailValid(available);
         if (!available) {
-          setError('이미 사용 중인 이메일입니다.');
+          setEmailError('이미 사용 중인 이메일입니다.');
         } else {
-          setError('');
+          setEmailError('');
         }
       } catch (err) {
+        console.error('Email validation error:', err);
         setEmailValid(false);
-        setError('이메일 확인 중 오류가 발생했습니다.');
+        setEmailError('이메일 확인 중 오류가 발생했습니다.');
       } finally {
         setEmailChecking(false);
       }
@@ -203,7 +210,8 @@ function Register() {
                   placeholder="이메일을 입력하세요"
                 />
                 {emailChecking && <span className={styles.checking}>확인 중...</span>}
-                {!emailChecking && email && emailValid && <span className={styles.valid}>✓ 사용 가능한 이메일입니다.</span>}
+                {!emailChecking && email && emailError && <span className={styles.errorText}>{emailError}</span>}
+                {!emailChecking && email && emailValid && !emailError && <span className={styles.valid}>✓ 사용 가능한 이메일입니다.</span>}
               </div>
 
               <button type="submit" className={styles.submitButton} disabled={isLoading || !emailValid || emailChecking}>

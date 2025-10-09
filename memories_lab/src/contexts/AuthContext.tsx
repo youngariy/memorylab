@@ -112,8 +112,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkEmailAvailability = useCallback(async (email: string): Promise<boolean> => {
     try {
       await authEndpoints.checkEmail(email);
+      console.log(`[AuthContext] Email ${email} is AVAILABLE (200 OK)`);
       return true; // Available
     } catch (error) {
+      console.log(`[AuthContext] Email ${email} is NOT AVAILABLE (409 Conflict)`, error);
       return false; // Not available
     }
   }, []);

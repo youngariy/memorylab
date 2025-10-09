@@ -169,6 +169,15 @@
   font-style: italic;
 }
 
+.errorText {
+  color: #ff6b6b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .formGroup {
   display: flex;
   flex-direction: column;
