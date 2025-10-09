@@ -1,9 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import Navigation from '../components/main/Navigation';
-import MobileNavigation from '../components/main/MobileNavigation';
-import { useMobile } from '../hooks/useMobile';
+import logo from '@/assets/memories_logo.png';
 import styles from './Register.module.css';
 
 type Step = 'email' | 'verify' | 'details';
@@ -27,7 +25,6 @@ function Register() {
 
   const { sendVerificationCode, verifyCode, register, checkEmailAvailability, checkNicknameAvailability } = useAuth();
   const navigate = useNavigate();
-  const { isMobile } = useMobile();
 
   // Email validation check
   useEffect(() => {
@@ -140,11 +137,17 @@ function Register() {
 
   return (
     <div className={styles.registerContainer}>
-      {isMobile ? <MobileNavigation /> : <Navigation />}
+      {/* Simple header with logo */}
+      <div className={styles.header}>
+        <Link to="/" className={styles.logoLink}>
+          <img src={logo} alt="Memories Lab" className={styles.logo} />
+        </Link>
+      </div>
 
       <div className={styles.registerContent}>
         <div className={styles.registerBox}>
           <h1 className={styles.title}>회원가입</h1>
+          <p className={styles.subtitle}>추억현상소에서 새로운 시작을 함께하세요</p>
 
           <div className={styles.stepIndicator}>
             <div className={`${styles.stepItem} ${step === 'email' ? styles.active : ''} ${step !== 'email' ? styles.completed : ''}`}>

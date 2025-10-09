@@ -1,9 +1,7 @@
 import { useState, FormEvent, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import Navigation from '../components/main/Navigation';
-import MobileNavigation from '../components/main/MobileNavigation';
-import { useMobile } from '../hooks/useMobile';
+import logo from '@/assets/memories_logo.png';
 import styles from './Login.module.css';
 
 function Login() {
@@ -15,7 +13,6 @@ function Login() {
 
   const { login, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-  const { isMobile } = useMobile();
   const [searchParams] = useSearchParams();
 
   const redirectTo = searchParams.get('redirect') || '/';
@@ -50,11 +47,17 @@ function Login() {
 
   return (
     <div className={styles.loginContainer}>
-      {isMobile ? <MobileNavigation /> : <Navigation />}
+      {/* Simple header with logo */}
+      <div className={styles.header}>
+        <Link to="/" className={styles.logoLink}>
+          <img src={logo} alt="Memories Lab" className={styles.logo} />
+        </Link>
+      </div>
 
       <div className={styles.loginContent}>
         <div className={styles.loginBox}>
           <h1 className={styles.title}>로그인</h1>
+          <p className={styles.subtitle}>추억현상소에 오신 것을 환영합니다</p>
 
           {redirectMessage && (
             <div className={styles.info}>
