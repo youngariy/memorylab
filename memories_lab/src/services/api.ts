@@ -102,8 +102,15 @@ class ApiClient {
         throw new Error(errorData.message || `HTTP Error ${response.status}`);
       }
 
-      // Handle 204 No Content
-      if (response.status === 204) {
+      // Handle 204 No Content or empty responses
+      if (response.status === 204 || response.headers.get('content-length') === '0') {
+        return null as T;
+      }
+
+      // Check if response has content before parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // If no JSON content, return null for successful responses
         return null as T;
       }
 
