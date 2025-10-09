@@ -6,7 +6,7 @@ import { categoryToEnum, categoryToLabel, visibilityToEnum, visibilityToLabel, t
 import MobileNavigation from '@/components/main/MobileNavigation';
 import Navigation from '@/components/main/Navigation';
 import Breadcrumbs from '@/components/common/Breadcrumbs';
-import styles from './BoardCreate.module.css';
+import styles from './BoardEdit.module.css';
 import { useMobile } from '@/hooks/useMobile';
 
 function BoardEdit() {
@@ -96,20 +96,25 @@ function BoardEdit() {
 
   if (isLoading) {
     return (
-      <div className={styles.boardCreateContainer}>
+      <div className={styles.boardEditContainer}>
         {isMobile ? <MobileNavigation /> : <Navigation />}
-        <div className={styles.boardCreateContent}>
-          <p>로딩 중...</p>
+        <div className={styles.boardEditContent}>
+          <div className={styles.loadingContainer}>
+            <div className={styles.spinner}></div>
+            <p>게시글을 불러오는 중...</p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={styles.boardCreateContainer}>
+    <div className={styles.boardEditContainer}>
       {isMobile ? <MobileNavigation /> : <Navigation />}
-      <div className={styles.boardCreateContent}>
+      <div className={styles.boardEditContent}>
         <Breadcrumbs items={breadcrumbs} />
+
+        <h1 className={styles.pageTitle}>게시글 수정</h1>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           {error && <div className={styles.error}>{error}</div>}
