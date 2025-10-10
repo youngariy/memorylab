@@ -1,25 +1,29 @@
 .boardContainer {
-  color: white;
-  border-radius: 16px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  transition: transform var(--transition-base), box-shadow var(--transition-base), background var(--transition-base);
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   width: 100%;
+  box-shadow: var(--shadow-sm);
 }
 
 .boardContainer:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: var(--shadow-xl);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(102, 126, 234, 0.3);
 }
 
 .boardContainer:focus {
-  outline: 2px solid #667eea;
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
 .boardContainer:active {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.005);
 }
 
 .header {
@@ -30,38 +34,46 @@
 }
 
 .title {
-  font-size: 18px;
-  font-weight: normal;
+  font-size: 20px;
+  font-weight: 600;
   margin: 0;
-  color: white;
+  color: var(--text-primary);
+  letter-spacing: -0.3px;
+  line-height: 1.4;
 }
 
 .writeButton {
-  background: none;
-  border: none;
-  color: #888;
+  background: var(--bg-hover);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: var(--text-tertiary);
   font-size: 14px;
   cursor: pointer;
-  padding: 8px 12px;
-  border-radius: 8px;
-  transition: background-color 0.2s ease;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+  font-weight: 500;
 }
 
 .writeButton:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background: var(--bg-active);
+  border-color: rgba(102, 126, 234, 0.3);
+  color: var(--primary-light);
+  transform: translateY(-1px);
 }
 
 .imageContainer {
   margin-bottom: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   width: 100%;
   aspect-ratio: 16 / 10; /* 16:10 비율 (노트북 화면에 적합) */
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  background: var(--gradient-card);
   position: relative;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .postImage {
@@ -77,17 +89,18 @@
 .placeholder {
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+  background: var(--gradient-card);
   display: flex;
   align-items: center;
   justify-content: center;
   position: absolute;
   top: 0;
   left: 0;
+  backdrop-filter: blur(5px);
 }
 
 .placeholder.noVideo {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+  background: var(--gradient-hover);
 }
 
 .placeholderIcon {
@@ -114,16 +127,22 @@
   flex-direction: column;
   align-items: center;
   gap: 0.5rem;
-  padding: 1rem;
+  padding: 1.25rem;
   background: rgba(102, 126, 234, 0.2);
-  border-radius: 8px;
-  color: #a0aec0;
+  border-radius: var(--radius-sm);
+  color: var(--accent);
   font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  backdrop-filter: blur(5px);
 }
 
 .statusBadge.error {
   background: rgba(244, 67, 54, 0.2);
-  color: #f44336;
+  color: var(--error);
+  border-color: rgba(244, 67, 54, 0.3);
+  animation: none;
 }
 
 .badges {
@@ -135,12 +154,15 @@
 
 .category {
   display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: rgba(102, 126, 234, 0.2);
-  color: #667eea;
-  border-radius: 12px;
+  padding: 0.375rem 0.875rem;
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--primary-light);
+  border-radius: var(--radius-md);
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  border: 1px solid rgba(102, 126, 234, 0.3);
 }
 
 .privateBadge {
@@ -158,11 +180,12 @@
 }
 
 .contentText {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #e0e0e0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-secondary);
   margin: 0;
-  word-break: break-all;
+  word-break: break-word;
+  opacity: 0.9;
 }
 
 .stats {

@@ -1,8 +1,9 @@
 .loginContainer {
   min-height: 100vh;
-  background: #1a1a1c;
+  background: var(--bg-primary);
   display: flex;
   flex-direction: column;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .header {
@@ -34,25 +35,28 @@
 }
 
 .loginBox {
-  background: #35353a;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  background: var(--bg-tertiary);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
   padding: 3.5rem 3rem;
   width: 100%;
   max-width: 460px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  animation: scaleIn 0.3s ease-out;
 }
 
 .title {
   font-size: 2rem;
   font-weight: 700;
-  color: #fff;
+  color: var(--text-primary);
   text-align: center;
   margin-bottom: 0.5rem;
+  letter-spacing: -0.5px;
 }
 
 .subtitle {
-  color: #9ca3af;
+  color: var(--text-tertiary);
   text-align: center;
   font-size: 0.95rem;
   margin-bottom: 2.5rem;
@@ -104,54 +108,56 @@
 
 .formGroup input {
   padding: 1rem 1.125rem;
-  background: #2a2a2f;
-  border: 2px solid transparent;
-  border-radius: 8px;
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
   font-size: 1rem;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   font-family: inherit;
 }
 
 .formGroup input::placeholder {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .formGroup input:focus {
   outline: none;
-  border-color: #007bff;
-  background: #2e2e33;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.15);
+  border-color: var(--primary);
+  background: var(--bg-tertiary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
 }
 
 .submitButton {
   padding: 1.125rem;
-  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
   margin-top: 0.75rem;
-  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  letter-spacing: 0.3px;
 }
 
 .submitButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
 
 .submitButton:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
 }
 
 .submitButton:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+  background: linear-gradient(135deg, var(--text-disabled) 0%, var(--text-muted) 100%);
   box-shadow: none;
 }
 
@@ -163,15 +169,30 @@
 }
 
 .links a {
-  color: #4dabf7;
+  color: var(--accent);
   text-decoration: none;
   font-weight: 600;
-  transition: color 0.2s;
+  transition: all var(--transition-base);
+  position: relative;
+}
+
+.links a::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--accent);
+  transition: width var(--transition-base);
 }
 
 .links a:hover {
-  color: #74c0fc;
-  text-decoration: underline;
+  color: var(--primary-light);
+}
+
+.links a:hover::after {
+  width: 100%;
 }
 
 @media (max-width: 768px) {
