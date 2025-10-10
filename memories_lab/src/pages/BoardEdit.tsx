@@ -16,7 +16,7 @@ function BoardEdit() {
   const { isMobile } = useMobile();
 
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('자유');
+  const [category, setCategory] = useState('장면');
   const [visibility, setVisibility] = useState('전체공개');
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -140,9 +140,10 @@ function BoardEdit() {
                 onChange={(e) => setCategory(e.target.value)}
                 className={styles.select}
               >
-                <option value="자유">자유</option>
-                <option value="공지">공지</option>
-                <option value="QNA">QNA</option>
+                <option value="장면">장면</option>
+                <option value="물체">물체</option>
+                {isAdmin && <option value="공지사항">공지사항</option>}
+                <option value="문의하기">문의하기</option>
               </select>
             </div>
 

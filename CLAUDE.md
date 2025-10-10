@@ -51,12 +51,35 @@ pnpm lint
 ### Key Features
 
 - **Responsive Design**: Mobile (≤768px), Tablet (769-1023px), Desktop (≥1024px)
-- **Video Upload**: MP4 file validation and drag-and-drop support
-- **3D Visualization**: Uses Spark.js (MIT license) to render PLY files with Three.js when status is `READY`
+- **Video Upload**: MP4 file validation and drag-and-drop support (max 500MB)
+- **Upload Progress Tracking**: XMLHttpRequest-based progress monitoring during file upload
+- **3D Visualization**: Uses `@mkkellogg/gaussian-splats-3d` to render PLY files when status is `READY`
 
 ### Path Alias
 
 The `@` alias points to `./src` (configured in `vite.config.dev.ts`)
+
+### API Proxy Configuration
+
+The frontend proxies `/api` requests to the backend:
+- **Development**: `http://localhost:8080` (run backend with `./gradlew bootRun`)
+- **Production**: `https://mlab.snowytiger.me`
+- Configuration in `vite.config.dev.ts:19-30`
+
+### Development Workflow
+
+1. **Start Backend**: `cd memorylab && ./gradlew bootRun` (or `.bat` on Windows)
+2. **Start Frontend**: `cd memories_lab && pnpm dev`
+3. **Access**: Frontend runs on `http://localhost:5173`, API calls proxy to backend at `:8080`
+
+### Frontend Service Layer
+
+- **`services/api.ts`**: Base HTTP client with JWT token management and automatic refresh
+- **`services/endpoints.ts`**: Type-safe API endpoint definitions organized by domain:
+  - `authEndpoints`: Authentication (login, register, email verification)
+  - `boardEndpoints`: Board CRUD, likes, with pagination support
+  - `commentEndpoints`: Comment CRUD for boards
+- All API types defined in `types/api.ts` for end-to-end type safety
 
 ## Backend Development (`memorylab/`)
 
@@ -64,16 +87,20 @@ The `@` alias points to `./src` (configured in `vite.config.dev.ts`)
 
 ```bash
 # Run application
-./gradlew bootRun
+./gradlew bootRun                # Unix/macOS
+./gradlew.bat bootRun            # Windows
 
 # Build project
-./gradlew build
+./gradlew build                  # Unix/macOS
+./gradlew.bat build              # Windows
 
 # Run tests
-./gradlew test
+./gradlew test                   # Unix/macOS
+./gradlew.bat test               # Windows
 
 # Clean build
-./gradlew clean build
+./gradlew clean build            # Unix/macOS
+./gradlew.bat clean build        # Windows
 ```
 
 ### Technology Stack
@@ -114,9 +141,11 @@ The `Board` entity (`com.memorylab.domain.board.Board`) is the central domain mo
 1. **Upload**: User uploads MP4 → `BoardService.createBoard()` saves file locally
 2. **AI Dispatch**: Backend sends file URL to AI server → receives `aiTaskId` → sets `ExternalStatus.QUEUED`
 3. **Processing**: AI server performs 3D Gaussian Splatting reconstruction
-4. **Webhook Callback**: AI server notifies completion → `AiResultHandlerService` updates status
+4. **Status Updates** (hybrid approach):
+   - **Primary**: Webhook callbacks via `AiResultHandlerService` (signature-validated)
+   - **Fallback**: `AiStatusScheduler` polls every 60s for tasks in `QUEUED`/`PROCESSING` state
 5. **Download**: Backend downloads PLY file from `externalResultUrl`
-6. **Ready**: Frontend displays "3D 보기" button → renders PLY with Spark.js + Three.js
+6. **Ready**: Frontend displays "3D 보기" button → renders PLY using React Three Fiber
 
 #### Key Services
 
@@ -136,8 +165,9 @@ The `Board` entity (`com.memorylab.domain.board.Board`) is the central domain mo
 - `processFailedTask()`: Handles processing failures
 
 **Schedulers**:
-- `ThumbnailScheduler`: Generates thumbnails from videos
+- `ThumbnailScheduler`: Generates thumbnails from videos (triggered when `ThumbnailStatus.PENDING`)
 - `CleanupScheduler`: Removes old/abandoned resources
+- `AiStatusScheduler`: Polls AI server every 60 seconds for tasks with status `QUEUED` or `PROCESSING`
 - Note: `ConversionPollingScheduler` is deprecated (replaced by webhook system)
 
 #### Security
@@ -158,17 +188,26 @@ The `Board` entity (`com.memorylab.domain.board.Board`) is the central domain mo
 - **Profiles**: `application.yml` (default), `application-prod.yml` (production)
 - **Key Properties**:
   - `file.storage.*`: File storage paths for videos, thumbnails, PLY files
-  - `ai.server.base-url`: External AI server endpoint
+  - `gpu-server.base-url`: External AI server endpoint (changed from `ai.server.base-url`)
+  - `gpu-server.webhook-secret`: Webhook signature validation secret
+  - `app.upload.root-dir`: Root directory for file uploads
   - JWT configuration in `JwtProperties`
+- **Environment Variables** (required):
+  - `SPRING_DATASOURCE_URL`, `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD`
+  - `JWT_SECRET`, `GPU_WEBHOOK_SECRET`
+  - `SPRING_MAIL_USERNAME`, `SPRING_MAIL_PASSWORD`
 
 ### External Dependencies
 
-- **Spark.js**: 3D Gaussian splat rendering library (MIT license, Three.js compatible)
-- GitHub: https://github.com/sparkjsdev/spark
+- **@mkkellogg/gaussian-splats-3d**: 3D Gaussian Splatting rendering library (v0.4.7)
+- **@react-three/fiber** & **@react-three/drei**: React bindings for Three.js
+- Frontend uses these libraries to render PLY files when board status is `READY`
+- Implementation in `memories_lab/src/components/Post/PlyViewer.tsx`
 
 ## Development Notes
 
 - The project is actively developed (2025.08 - 2025.12 timeline)
 - Use `pnpm` for frontend dependency management (preferred over npm)
 - Backend requires Java 21 toolchain
-- AI processing is asynchronous via webhook callbacks (not polling)
+- AI processing uses hybrid approach: webhook callbacks (primary) + polling fallback (60s interval)
+- Windows development: Use `./gradlew.bat` instead of `./gradlew` for all Gradle commands

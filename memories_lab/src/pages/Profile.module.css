@@ -2,6 +2,7 @@
   display: flex;
   gap: 40px;
   padding: 40px;
+  padding-left: 380px; /* 40px (왼쪽 여백) + 300px (네비게이션 너비) + 40px (간격) */
   min-height: 100vh;
 }
 
@@ -13,6 +14,17 @@
   background-color: #35353a;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+@media (max-width: 1200px) {
+  .profileContainer {
+    padding: 20px;
+    padding-left: 280px; /* 20px + 240px + 20px */
+  }
+
+  .profileContent {
+    padding: 40px;
+  }
 }
 
 .pageTitle {

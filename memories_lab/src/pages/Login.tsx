@@ -15,7 +15,8 @@ function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const redirectTo = searchParams.get('redirect') || '/';
+  const redirect = searchParams.get('redirect');
+  const redirectTo = redirect || '/post';
 
   useEffect(() => {
     // If already logged in, redirect immediately
@@ -23,11 +24,12 @@ function Login() {
       navigate(redirectTo, { replace: true });
     }
 
-    // Show contextual message if user was redirected from protected route
-    if (redirectTo !== '/') {
+    // Show contextual message only if user was redirected from protected route
+    // (i.e., redirect parameter exists in URL)
+    if (redirect) {
       setRedirectMessage('로그인이 필요합니다. 로그인 후 원하는 페이지로 이동합니다.');
     }
-  }, [isAuthenticated, navigate, redirectTo]);
+  }, [isAuthenticated, navigate, redirectTo, redirect]);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();

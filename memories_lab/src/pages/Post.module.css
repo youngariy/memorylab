@@ -1,8 +1,7 @@
 .postContainer {
-  display: flex;
-  flex-direction: row;
-  gap: 40px;
+  min-height: 100vh;
   padding: 40px;
+  padding-left: 380px; /* 40px (왼쪽 여백) + 300px (네비게이션 너비) + 40px (간격) */
 }
 
 .postContent {
@@ -12,6 +11,19 @@
   background-color: #35353a;
   padding: 60px;
   border-radius: 8px;
+  width: 100%;
+  flex: 1;
+}
+
+@media (max-width: 1200px) {
+  .postContainer {
+    padding: 20px;
+    padding-left: 280px; /* 20px + 240px + 20px */
+  }
+
+  .postContent {
+    padding: 40px;
+  }
 }
 
 @media (max-width: 768px) {

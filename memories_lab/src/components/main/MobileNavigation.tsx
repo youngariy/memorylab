@@ -41,6 +41,14 @@ function MobileNavigation() {
     navigate('/');
   };
 
+  const handleSearch = (searchQuery: string) => {
+    if (searchQuery.trim()) {
+      navigate(`/post?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/post');
+    }
+  };
+
   return (
     <>
       <div className={styles.navigation}>
@@ -61,7 +69,7 @@ function MobileNavigation() {
           </button>
         </div>
         <div className={styles.searchContainer}>
-          <SearchInput />
+          <SearchInput onSearch={handleSearch} />
         </div>
       </div>
 
@@ -121,7 +129,7 @@ function MobileNavigation() {
                   <button
                     type="button"
                     className={styles.menuItem}
-                    onClick={() => handleNavigation('/post')}
+                    onClick={() => handleNavigation('/post?category=SCENE')}
                   >
                     <img src={screenshot} alt="screenshot" />
                     <span>장면</span>
@@ -129,7 +137,7 @@ function MobileNavigation() {
                   <button
                     type="button"
                     className={styles.menuItem}
-                    onClick={() => handleNavigation('/post')}
+                    onClick={() => handleNavigation('/post?category=OBJECT')}
                   >
                     <img src={object} alt="object" />
                     <span>물체</span>
@@ -137,10 +145,7 @@ function MobileNavigation() {
                   <button
                     type="button"
                     className={styles.menuItem}
-                    onClick={() => {
-                      closeMenu();
-                      alert('공지사항 기능 준비 중');
-                    }}
+                    onClick={() => handleNavigation('/post?category=NOTICE')}
                   >
                     <img src={notification} alt="notification" />
                     <span>공지사항</span>
@@ -148,10 +153,7 @@ function MobileNavigation() {
                   <button
                     type="button"
                     className={styles.menuItem}
-                    onClick={() => {
-                      closeMenu();
-                      alert('문의하기 기능 준비 중');
-                    }}
+                    onClick={() => handleNavigation('/post?category=QNA')}
                   >
                     <img src={contact} alt="contact" />
                     <span>문의하기</span>

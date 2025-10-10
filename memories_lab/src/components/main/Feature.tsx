@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './Feature.module.css';
 
 function Feature() {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const navigate = useNavigate();
 
   return (
     <section className={styles.feature} ref={ref}>
@@ -49,6 +51,7 @@ function Feature() {
               transition={{ duration: 0.6, delay: 0.8 }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/post')}
             >
               자세히 보기
             </motion.button>
@@ -95,6 +98,7 @@ function Feature() {
             transition={{ duration: 0.6, delay: 1.0 }}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/post')}
           >
             자세히 보기
           </motion.button>

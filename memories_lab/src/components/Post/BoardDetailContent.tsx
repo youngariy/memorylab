@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { boardEndpoints, commentEndpoints } from '@/services/endpoints';
 import { useAuth } from '@/hooks/useAuth';
 import type { BoardDetail, Comment } from '@/types/api';
-import { categoryToLabel } from '@/types/api';
+import { categoryToLabel, visibilityToLabel } from '@/types/api';
 import styles from './BoardDetailContent.module.css';
 import processingIcon from '@/assets/progress.png';
 import heartIcon from '@/assets/heart.svg';
@@ -14,6 +14,7 @@ import commentIcon from '@/assets/comment.svg';
 import speechIcon from '@/assets/speech.svg';
 import refreshIcon from '@/assets/refresh.svg';
 import replyIcon from '@/assets/reply.svg';
+import PlyViewer from './PlyViewer';
 
 export default function BoardDetailContent() {
   const { id } = useParams<{ id: string }>();
@@ -33,6 +34,7 @@ export default function BoardDetailContent() {
 
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [isRefreshingComments, setIsRefreshingComments] = useState(false);
 
   // Fetch board detail
   const fetchBoard = useCallback(async () => {
@@ -58,11 +60,19 @@ export default function BoardDetailContent() {
   const fetchComments = useCallback(async () => {
     if (!id) return;
 
+    setIsRefreshingComments(true);
+    console.log('🔄 댓글 새로고침 시작...');
     try {
       const response = await commentEndpoints.list(Number(id));
       setComments(response.content);
+      console.log('✅ 댓글 새로고침 완료:', response.content.length, '개');
     } catch (err) {
-      console.error('Failed to fetch comments:', err);
+      console.error('❌ 댓글 로딩 실패:', err);
+    } finally {
+      // 애니메이션을 보여주기 위해 최소 500ms 대기
+      setTimeout(() => {
+        setIsRefreshingComments(false);
+      }, 500);
     }
   }, [id]);
 
@@ -292,7 +302,7 @@ export default function BoardDetailContent() {
 
   // Render single comment
   const renderSingleComment = (comment: Comment, isReply: boolean = false) => {
-    const isOwner = user?.id === comment.userId;
+    const isOwner = user?.id === comment.authorId;
     const canModerate = isOwner || isAdmin;
     const isEditing = editingCommentId === comment.id;
 
@@ -302,7 +312,9 @@ export default function BoardDetailContent() {
         className={`${styles.comment} ${isReply ? styles.replyComment : ''}`}
       >
         <div className={styles.commentHeader}>
-          <span className={styles.commentAuthor}>{comment.userNickname}</span>
+          {isReply && <span className={styles.replyBadge}>답글</span>}
+          <span className={styles.commentAuthor}>{comment.authorNickname}</span>
+          <span className={styles.commentDate}>{formatRelativeTime(comment.createdAt)}</span>
         </div>
 
         <div className={styles.commentContentContainer}>
@@ -372,9 +384,6 @@ export default function BoardDetailContent() {
               댓글달기
             </button>
           )}
-          <span className={styles.commentDate}>
-            {formatRelativeTime(comment.createdAt)}
-          </span>
         </div>
 
         {/* Reply form */}
@@ -384,10 +393,16 @@ export default function BoardDetailContent() {
               onSubmit={(e) => handleReplySubmit(e, comment.id)}
               className={styles.replyFormContainer}
             >
+              {user && (
+                <div className={styles.replyAuthorLabel}>
+                  <span className={styles.replyAuthorNickname}>{user.nickname}</span>
+                  <span className={styles.replyAuthorText}>님으로 답글 작성</span>
+                </div>
+              )}
               <textarea
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}
-                placeholder={`${comment.userNickname}님에게 답글 작성...`}
+                placeholder={`${comment.authorNickname}님에게 답글 작성...`}
                 className={styles.replyInput}
                 maxLength={500}
                 autoFocus
@@ -445,8 +460,8 @@ export default function BoardDetailContent() {
 
   return (
     <div className={styles.container}>
-      {/* Processing section */}
-      {isProcessing && (
+      {/* Processing section - 동영상이 있는 게시글만 표시 */}
+      {board.hasVideo && isProcessing && (
         <div className={styles.processingSection}>
           <img src={processingIcon} alt="processing" />
           <div>
@@ -457,6 +472,19 @@ export default function BoardDetailContent() {
                 : '변환이 완료되면 이메일로 안내를 받습니다'}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* 3D Model Ready section - 동영상이 있는 게시글만 표시 */}
+      {board.hasVideo && board.status === 'READY' && board.plyPath && (
+        <div className={styles.modelReadySection}>
+          <div className={styles.modelReadyHeader}>
+            <h2 className={styles.modelReadyTitle}>✨ 3D 모델이 준비되었습니다!</h2>
+            <p className={styles.modelReadyText}>
+              Gaussian Splatting 기술로 생성된 3D 모델입니다. 마우스로 회전하고 확대/축소할 수 있습니다.
+            </p>
+          </div>
+          <PlyViewer plyPath={board.plyPath} />
         </div>
       )}
 
@@ -526,7 +554,12 @@ export default function BoardDetailContent() {
         </div>
 
         {/* Category badge */}
-        <div className={styles.categoryBadge}>{categoryToLabel(board.category)}</div>
+        <div className={styles.badgesContainer}>
+          <div className={styles.categoryBadge}>{categoryToLabel(board.category)}</div>
+          {board.visibility === 'PRIVATE' && (
+            <div className={styles.privateBadge}>🔒 {visibilityToLabel(board.visibility)}</div>
+          )}
+        </div>
 
         {/* Board content */}
         <div className={styles.content}>
@@ -547,8 +580,9 @@ export default function BoardDetailContent() {
             <button
               type="button"
               onClick={fetchComments}
-              className={styles.refreshButton}
+              className={`${styles.refreshButton} ${isRefreshingComments ? styles.refreshing : ''}`}
               title="새로고침"
+              disabled={isRefreshingComments}
             >
               <img src={refreshIcon} alt="refresh icon" />
             </button>
@@ -586,22 +620,25 @@ export default function BoardDetailContent() {
 
         {/* Comment input */}
         <form onSubmit={handleCommentSubmit} className={styles.commentForm}>
-          <textarea
-            value={newComment}
-            onChange={(e) => setNewComment(e.target.value)}
-            placeholder={
-              isAuthenticated
-                ? '댓글을 입력하세요.'
-                : '로그인 후 댓글을 작성할 수 있습니다.'
-            }
-            className={styles.commentInput}
-            maxLength={500}
-            disabled={!isAuthenticated || isSubmittingComment}
-          />
-          <div className={styles.commentFormFooter}>
-            <span className={styles.charCount}>
-              {newComment.length}/500
-            </span>
+          {isAuthenticated && user && (
+            <div className={styles.commentAuthorLabel}>
+              <span className={styles.commentAuthorNickname}>{user.nickname}</span>
+              <span className={styles.commentAuthorText}>님으로 작성</span>
+            </div>
+          )}
+          <div className={styles.commentInputWrapper}>
+            <textarea
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder={
+                isAuthenticated
+                  ? '댓글을 입력하세요.'
+                  : '로그인 후 댓글을 작성할 수 있습니다.'
+              }
+              className={styles.commentInput}
+              maxLength={500}
+              disabled={!isAuthenticated || isSubmittingComment}
+            />
             <button
               type="submit"
               className={styles.submitButton}
@@ -609,6 +646,11 @@ export default function BoardDetailContent() {
             >
               {isSubmittingComment ? '작성 중...' : '작성'}
             </button>
+          </div>
+          <div className={styles.commentFormFooter}>
+            <span className={styles.charCount}>
+              {newComment.length}/500
+            </span>
           </div>
         </form>
       </div>

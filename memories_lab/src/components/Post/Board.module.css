@@ -1,13 +1,10 @@
 .boardContainer {
   color: white;
   border-radius: 16px;
-  margin: 16px;
-  max-width: 800px;
-  margin-left: auto;
-  margin-right: auto;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   padding: 16px;
   background: rgba(255, 255, 255, 0.02);
+  width: 100%;
 }
 
 .boardContainer:hover {
@@ -58,24 +55,58 @@
   margin-bottom: 20px;
   border-radius: 12px;
   overflow: hidden;
-  min-height: 200px;
+  width: 100%;
+  aspect-ratio: 16 / 10; /* 16:10 비율 (노트북 화면에 적합) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+  position: relative;
 }
 
 .postImage {
   width: 100%;
-  height: auto;
-  max-height: 400px;
-  object-fit: cover;
+  height: 100%;
+  object-fit: cover; /* 이미지가 컨테이너를 꽉 채우도록 */
   display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .placeholder {
   width: 100%;
-  height: 200px;
-  background: rgba(255, 255, 255, 0.05);
+  height: 100%;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.placeholder.noVideo {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
+}
+
+.placeholderIcon {
+  font-size: 4rem;
+  opacity: 0.3;
+  margin-bottom: 1rem;
+}
+
+.placeholderContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.placeholderText {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.95rem;
+  font-weight: 500;
 }
 
 .statusBadge {
@@ -95,6 +126,13 @@
   color: #f44336;
 }
 
+.badges {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
 .category {
   display: inline-block;
   padding: 0.25rem 0.75rem;
@@ -103,7 +141,16 @@
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
-  margin-bottom: 0.5rem;
+}
+
+.privateBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .content {
@@ -154,4 +201,54 @@
 .separator {
   color: #555;
   margin: 0 4px;
+}
+
+/* Responsive styles */
+@media (max-width: 1023px) {
+  .imageContainer {
+    aspect-ratio: 16 / 10; /* 태블릿: 16:10 유지 */
+  }
+
+  .placeholderIcon {
+    font-size: 3.5rem;
+  }
+
+  .placeholderText {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .boardContainer {
+    padding: 12px;
+  }
+
+  .imageContainer {
+    aspect-ratio: 4 / 3; /* 모바일: 4:3 비율 */
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .placeholderIcon {
+    font-size: 3rem;
+  }
+
+  .placeholderText {
+    font-size: 0.85rem;
+  }
+
+  .statusBadge {
+    font-size: 0.8rem;
+    padding: 0.75rem;
+  }
+
+  .contentText {
+    font-size: 13px;
+  }
+
+  .stats {
+    font-size: 11px;
+  }
 }

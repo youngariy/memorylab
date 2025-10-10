@@ -8,14 +8,72 @@
 .postNavigationLeft {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  gap: 10px;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  opacity: 0.8;
 }
 
 .postNavigationLeftTitle {
-  font-size: 14px;
-  line-height: 18px;
+  font-size: 15px;
+  line-height: 20px;
   font-weight: 600;
+  color: #e0e0e0;
+  letter-spacing: -0.3px;
+}
+
+.countBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 22px;
+  padding: 0 8px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: 11px;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.refreshButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(102, 126, 234, 0.5);
+  transform: rotate(90deg);
+}
+
+.refreshButton:active {
+  transform: rotate(180deg);
+}
+
+.refreshIcon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.refreshButton:hover .refreshIcon {
+  opacity: 1;
 }
 
 .postNavigationRight {
@@ -51,7 +109,90 @@
   line-height: 24px;
   font-weight: 600;
   color: #fff;
-  background-color: #0000ff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 6px;
   cursor: pointer;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+  transition: all 0.2s ease;
+}
+
+.createButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.6);
+}
+
+.createButton:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(102, 126, 234, 0.4);
+}
+
+.categoryFilters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.categoryButton {
+  height: 30px;
+  padding: 0 14px;
+  border: 1px solid #ddd;
+  background-color: #fff;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.categoryButton:hover {
+  border-color: #0000ff;
+  color: #0000ff;
+}
+
+.categoryButton.active {
+  border-color: #0000ff;
+  background-color: #0000ff;
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .postNavigationLeft {
+    gap: 8px;
+  }
+
+  .icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .postNavigationLeftTitle {
+    font-size: 14px;
+  }
+
+  .countBadge {
+    min-width: 24px;
+    height: 20px;
+    padding: 0 6px;
+    font-size: 11px;
+  }
+
+  .refreshButton {
+    width: 26px;
+    height: 26px;
+  }
+
+  .refreshIcon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .createButton {
+    height: 28px;
+    padding: 3px 12px;
+    font-size: 11px;
+  }
 }

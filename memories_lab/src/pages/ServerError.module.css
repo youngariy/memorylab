@@ -2,6 +2,7 @@
   min-height: 100vh;
   display: flex;
   background: #1a1a1f;
+  padding-left: 380px; /* 40px (왼쪽 여백) + 300px (네비게이션 너비) + 40px (간격) */
 }
 
 .content {
@@ -10,6 +11,12 @@
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    padding-left: 280px; /* 20px + 240px + 20px */
+  }
 }
 
 .errorBox {
@@ -78,6 +85,10 @@
 }
 
 @media (max-width: 768px) {
+  .container {
+    padding-left: 0;
+  }
+
   .errorCode {
     font-size: 80px;
   }

@@ -35,3 +35,12 @@ build/
 
 # Spring Boot
 target/
+
+# User uploads
+uploads/
+
+# Archive files
+*.tar.gz
+
+# Test SQL files
+*.sql

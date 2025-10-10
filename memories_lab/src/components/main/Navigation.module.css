@@ -1,7 +1,22 @@
 .navigation {
-  min-width: 300px;
+  position: fixed;
+  left: 40px;
+  top: 40px;
+  bottom: 40px;
+  width: 300px;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  z-index: 100;
+}
+
+@media (max-width: 1200px) {
+  .navigation {
+    left: 20px;
+    top: 20px;
+    bottom: 20px;
+    width: 240px;
+  }
 }
 
 .logo {
@@ -15,7 +30,7 @@
 
 /* 유저 정보 */
 .userInfo {
-  margin-top: auto;
+  margin-top: 20px;
   height: 80px;
   display: flex;
   align-items: center;
@@ -106,7 +121,9 @@
 .logoutSection {
   margin-top: 35px;
   padding-top: 30px;
+  padding-bottom: 20px;
   border-top: 1px solid #35353a;
+  border-bottom: 1px solid #35353a;
 }
 
 .logoutButton {

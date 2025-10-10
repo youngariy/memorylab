@@ -8,7 +8,7 @@ import uploadIcon from '@/assets/upload.png';
 
 export default function BoardCreateContent() {
   const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('자유');
+  const [category, setCategory] = useState('장면');
   const [visibility, setVisibility] = useState('전체공개');
   const [content, setContent] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -19,7 +19,7 @@ export default function BoardCreateContent() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isAdmin } = useAuth();
 
   const handleFileSelect = (file: File) => {
     const maxSize = 500 * 1024 * 1024; // 500MB in bytes
@@ -240,9 +240,10 @@ export default function BoardCreateContent() {
             className={styles.selectInput}
             disabled={isUploading}
           >
-            <option value="자유">자유</option>
-            <option value="QNA">QNA</option>
-            <option value="공지">공지</option>
+            <option value="장면">장면</option>
+            <option value="물체">물체</option>
+            {isAdmin && <option value="공지사항">공지사항</option>}
+            <option value="문의하기">문의하기</option>
           </select>
         </div>
 

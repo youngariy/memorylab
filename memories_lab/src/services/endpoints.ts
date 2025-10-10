@@ -82,13 +82,16 @@ export const boardEndpoints = {
   /**
    * Get board list with pagination
    */
-  list: (params: { page?: number; size?: number; sort?: string } = {}) => {
-    const { page = 0, size = 12, sort = 'createdAt,desc' } = params;
+  list: (params: { page?: number; size?: number; sort?: string; category?: string } = {}) => {
+    const { page = 0, size = 12, sort = 'createdAt,desc', category } = params;
     const queryParams = new URLSearchParams({
       page: page.toString(),
       size: size.toString(),
       sort,
     });
+    if (category) {
+      queryParams.append('category', category);
+    }
     return api.get<BoardPageResponse>(`/board?${queryParams}`);
   },
 

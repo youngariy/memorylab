@@ -6,11 +6,11 @@ import refreshIcon from '@/assets/refresh.svg';
 
 interface PostNavigationProps {
   totalCount: number;
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
 }
 
-export default function PostNavigation({ totalCount, searchQuery, onSearchChange }: PostNavigationProps) {
+export default function PostNavigation({
+  totalCount
+}: PostNavigationProps) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
@@ -22,22 +22,28 @@ export default function PostNavigation({ totalCount, searchQuery, onSearchChange
     }
   };
 
+  const handleRefresh = () => {
+    // URL 파라미터를 제거하고 /post로 이동하여 모든 카테고리 글 표시
+    window.location.href = '/post';
+  };
+
   return (
     <div className={styles.postNavigation}>
       <div className={styles.postNavigationLeft}>
-        <img src={speechIcon} alt="speech" />
-        <span className={styles.postNavigationLeftTitle}>게시글 {totalCount}</span>
-        <img src={refreshIcon} alt="refresh" />
+        <img src={speechIcon} alt="speech" className={styles.icon} />
+        <span className={styles.postNavigationLeftTitle}>전체 게시글</span>
+        <span className={styles.countBadge}>{totalCount}</span>
+        <button
+          type="button"
+          className={styles.refreshButton}
+          onClick={handleRefresh}
+          aria-label="새로고침"
+        >
+          <img src={refreshIcon} alt="refresh" className={styles.refreshIcon} />
+        </button>
       </div>
 
       <div className={styles.postNavigationRight}>
-        <input
-          type="text"
-          placeholder="검색..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className={styles.searchInput}
-        />
         <button type="button" className={styles.createButton} onClick={handleCreateClick}>
           새글 작성
         </button>

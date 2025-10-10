@@ -2,6 +2,7 @@
   display: flex;
   gap: 40px;
   padding: 40px;
+  padding-left: 380px; /* 40px (왼쪽 여백) + 300px (네비게이션 너비) + 40px (간격) */
 }
 
 .boardCreateContent {
@@ -9,6 +10,17 @@
   padding: 60px;
   background-color: #35353a;
   border-radius: 8px;
+}
+
+@media (max-width: 1200px) {
+  .boardCreateContainer {
+    padding: 20px;
+    padding-left: 280px; /* 20px + 240px + 20px */
+  }
+
+  .boardCreateContent {
+    padding: 40px;
+  }
 }
 
 @media (max-width: 768px) {

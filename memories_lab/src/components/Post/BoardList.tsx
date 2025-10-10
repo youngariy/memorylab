@@ -8,11 +8,12 @@ import styles from './BoardList.module.css';
 import Board from './Board';
 
 interface BoardListProps {
+  category: string;
   searchQuery: string;
   onTotalCountChange: (count: number) => void;
 }
 
-export default function BoardList({ searchQuery, onTotalCountChange }: BoardListProps) {
+export default function BoardList({ category, searchQuery, onTotalCountChange }: BoardListProps) {
   const [boards, setBoards] = useState<BoardSummary[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -20,16 +21,25 @@ export default function BoardList({ searchQuery, onTotalCountChange }: BoardList
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Reset page when category or search query changes
+  useEffect(() => {
+    setPage(0);
+  }, [category, searchQuery]);
+
   useEffect(() => {
     fetchBoards();
-  }, [page]);
+  }, [page, category, searchQuery]);
 
   const fetchBoards = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await boardEndpoints.list({ page, size: 12 });
+      const response = await boardEndpoints.list({
+        page,
+        size: 12,
+        ...(category && { category })
+      });
       setBoards(response.content);
       setTotalPages(response.totalPages);
     } catch (err) {

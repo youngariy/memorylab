@@ -1,4 +1,4 @@
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import logo from '@/assets/memories_logo.png';
 import styles from './Navigation.module.css';
@@ -24,6 +24,14 @@ function Navigation() {
     navigate('/');
   };
 
+  const handleSearch = (searchQuery: string) => {
+    if (searchQuery.trim()) {
+      navigate(`/post?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate('/post');
+    }
+  };
+
   return (
     <div className={styles.navigation}>
       <img
@@ -34,7 +42,7 @@ function Navigation() {
         style={{ cursor: 'pointer' }}
       />
       <div className={styles.searchContainer}>
-        <SearchInput />
+        <SearchInput onSearch={handleSearch} />
       </div>
 
       {/* 메뉴 항목들 */}
@@ -42,7 +50,7 @@ function Navigation() {
         <button
           type="button"
           className={styles.menuItem}
-          onClick={() => navigate('/post')}
+          onClick={() => navigate('/post?category=SCENE')}
         >
           <img src={screenshot} alt="screenshot" />
           <span>장면</span>
@@ -50,7 +58,7 @@ function Navigation() {
         <button
           type="button"
           className={styles.menuItem}
-          onClick={() => navigate('/post')}
+          onClick={() => navigate('/post?category=OBJECT')}
         >
           <img src={object} alt="object" />
           <span>물체</span>
@@ -58,7 +66,7 @@ function Navigation() {
         <button
           type="button"
           className={styles.menuItem}
-          onClick={() => alert('공지사항 기능 준비 중')}
+          onClick={() => navigate('/post?category=NOTICE')}
         >
           <img src={notification} alt="notification" />
           <span>공지사항</span>
@@ -66,36 +74,38 @@ function Navigation() {
         <button
           type="button"
           className={styles.menuItem}
-          onClick={() => alert('문의하기 기능 준비 중')}
+          onClick={() => navigate('/post?category=QNA')}
         >
           <img src={contact} alt="contact" />
           <span>문의하기</span>
         </button>
-
-        {isAuthenticated ? (
-          <div className={styles.logoutSection}>
-            <button
-              type="button"
-              className={styles.logoutButton}
-              onClick={handleLogout}
-            >
-              <img src={logoutIcon} alt="logout" />
-              <span>Log Out</span>
-            </button>
-          </div>
-        ) : (
-          <div className={styles.logoutSection}>
-            <button
-              type="button"
-              className={styles.logoutButton}
-              onClick={() => navigate('/login')}
-            >
-              <span>Log In</span>
-            </button>
-          </div>
-        )}
       </nav>
 
+      {/* 로그아웃/로그인 버튼 */}
+      {isAuthenticated ? (
+        <div className={styles.logoutSection}>
+          <button
+            type="button"
+            className={styles.logoutButton}
+            onClick={handleLogout}
+          >
+            <img src={logoutIcon} alt="logout" />
+            <span>Log Out</span>
+          </button>
+        </div>
+      ) : (
+        <div className={styles.logoutSection}>
+          <button
+            type="button"
+            className={styles.logoutButton}
+            onClick={() => navigate('/login')}
+          >
+            <span>Log In</span>
+          </button>
+        </div>
+      )}
+
+      {/* 프로필 */}
       <div
         className={styles.userInfo}
         onClick={() => {

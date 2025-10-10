@@ -17,6 +17,22 @@ export default function Board({ board }: BoardProps) {
     navigate(`/post/${board.id}`);
   };
 
+  // Get category-specific icon and label for no-video placeholders
+  const getCategoryPlaceholder = (category: string) => {
+    switch (category) {
+      case 'PLACE':
+        return { icon: '🏛️', label: '장소 이야기' };
+      case 'OBJECT':
+        return { icon: '📦', label: '물건 이야기' };
+      case 'MEMORY':
+        return { icon: '💭', label: '추억 이야기' };
+      case 'SPACE':
+        return { icon: '🌆', label: '공간 이야기' };
+      default:
+        return { icon: '📝', label: '이야기' };
+    }
+  };
+
   // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -83,7 +99,22 @@ export default function Board({ board }: BoardProps) {
 
       {/* Image or Status Badge */}
       <div className={styles.imageContainer}>
-        {thumbnailUrl ? (
+        {/* 공지사항이나 문의 카테고리는 항상 특별한 썸네일 표시 */}
+        {board.category === 'NOTICE' ? (
+          <div className={styles.placeholder}>
+            <div className={styles.placeholderContent}>
+              <div className={styles.placeholderIcon}>📢</div>
+              <div className={styles.placeholderText}>공지사항</div>
+            </div>
+          </div>
+        ) : board.category === 'QNA' ? (
+          <div className={styles.placeholder}>
+            <div className={styles.placeholderContent}>
+              <div className={styles.placeholderIcon}>💬</div>
+              <div className={styles.placeholderText}>문의</div>
+            </div>
+          </div>
+        ) : thumbnailUrl ? (
           <img
             src={thumbnailUrl}
             alt={board.title}
@@ -105,18 +136,35 @@ export default function Board({ board }: BoardProps) {
             }}
           />
         ) : (
-          <div className={styles.placeholder}>
-            {board.status === 'PROCESSING' || board.status === 'CONVERTING' ? (
+          <div className={`${styles.placeholder} ${!board.thumbnailStatus || board.thumbnailStatus === 'NONE' ? styles.noVideo : ''}`}>
+            {/* 동영상이 없는 단순 게시글 */}
+            {!board.hasVideo ? (
+              <div className={styles.placeholderContent}>
+                <div className={styles.placeholderIcon}>📝</div>
+                <div className={styles.placeholderText}>단순 게시글</div>
+              </div>
+            ) : board.status === 'PROCESSING' || board.status === 'CONVERTING' ? (
               <div className={styles.statusBadge}>
-                <span>변환 중...</span>
+                <span>🔄 3D 모델 변환 중...</span>
                 {board.progress && <span>{board.progress}%</span>}
               </div>
             ) : board.status === 'FAILED' ? (
-              <div className={styles.statusBadge + ' ' + styles.error}>변환 실패</div>
+              <div className={`${styles.statusBadge} ${styles.error}`}>
+                <span>❌ 변환 실패</span>
+              </div>
             ) : board.thumbnailStatus === 'PENDING' ? (
-              <div className={styles.statusBadge}>썸네일 생성 중...</div>
+              <div className={styles.statusBadge}>
+                <span>🖼️ 썸네일 생성 중...</span>
+              </div>
             ) : (
-              <div className={styles.statusBadge}>이미지 없음</div>
+              <div className={styles.placeholderContent}>
+                <div className={styles.placeholderIcon}>
+                  {getCategoryPlaceholder(board.category).icon}
+                </div>
+                <div className={styles.placeholderText}>
+                  {getCategoryPlaceholder(board.category).label}
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -124,7 +172,12 @@ export default function Board({ board }: BoardProps) {
 
       {/* Category & Content */}
       <div className={styles.content}>
-        <span className={styles.category}>{categoryToLabel(board.category)}</span>
+        <div className={styles.badges}>
+          <span className={styles.category}>{categoryToLabel(board.category)}</span>
+          {board.visibility === 'PRIVATE' && (
+            <span className={styles.privateBadge}>🔒 비공개</span>
+          )}
+        </div>
         {/* Note: API doesn't return content in summary, using title as fallback */}
         <p className={styles.contentText}>{truncateContent(board.title)}</p>
       </div>

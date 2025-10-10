@@ -4,7 +4,7 @@
 
 // ==================== Enums ====================
 
-export type Category = 'NOTICE' | 'FREE' | 'QNA';
+export type Category = 'NOTICE' | 'SCENE' | 'OBJECT' | 'QNA';
 export type Visibility = 'PUBLIC' | 'PRIVATE';
 export type ConversionStatus =
   | 'NONE'
@@ -94,6 +94,7 @@ export interface BoardSummary {
   title: string;
   author: Author;
   category: Category;
+  visibility: Visibility;  // Required field from backend
   viewCount: number;
   likeCount: number;
   commentCount: number;
@@ -101,8 +102,8 @@ export interface BoardSummary {
   isLikedByCurrentUser: boolean;
   thumbnailPath: string | null;
   thumbnailStatus: string;  // "NONE" | "PENDING" | "READY" | "FAILED"
+  hasVideo: boolean;  // 동영상 파일 업로드 여부
   status: ConversionStatus;  // Board processing status
-  visibility?: Visibility;  // Optional, may not be in list response
   progress?: number | null;
   errorMessage?: string | null;
   tags?: string | null;
@@ -131,6 +132,7 @@ export interface BoardDetail {
   aiTaskId: string | null;
   gpuErrorMessage: string | null;
   transcodeStatus: string;
+  hasVideo: boolean;  // 동영상 파일 업로드 여부
   status: ConversionStatus;
   progress?: number | null;
   errorMessage?: string | null;
@@ -163,11 +165,11 @@ export interface Comment {
   id: number;
   content: string;
   boardId: number;
-  userId: number;
-  userNickname: string;
+  authorId: number;
+  authorNickname: string;
   parentId: number | null;
   createdAt: string;
-  updatedAt: string;
+  modifiedAt: string;
 }
 
 export interface CommentPageResponse {
@@ -200,9 +202,10 @@ export interface ApiError {
 // ==================== UI Helper Types ====================
 
 export const CATEGORY_LABELS: Record<Category, string> = {
-  NOTICE: '공지',
-  FREE: '자유',
-  QNA: 'QNA',
+  NOTICE: '공지사항',
+  SCENE: '장면',
+  OBJECT: '물체',
+  QNA: '문의하기',
 };
 
 export const VISIBILITY_LABELS: Record<Visibility, string> = {
@@ -211,9 +214,10 @@ export const VISIBILITY_LABELS: Record<Visibility, string> = {
 };
 
 export const CATEGORY_MAP: Record<string, Category> = {
-  '공지': 'NOTICE',
-  '자유': 'FREE',
-  'QNA': 'QNA',
+  '공지사항': 'NOTICE',
+  '장면': 'SCENE',
+  '물체': 'OBJECT',
+  '문의하기': 'QNA',
 };
 
 export const VISIBILITY_MAP: Record<string, Visibility> = {
@@ -223,7 +227,7 @@ export const VISIBILITY_MAP: Record<string, Visibility> = {
 
 // Helper to convert Korean labels to backend enums
 export function categoryToEnum(label: string): Category {
-  return CATEGORY_MAP[label] || 'FREE';
+  return CATEGORY_MAP[label] || 'SCENE';
 }
 
 export function visibilityToEnum(label: string): Visibility {
