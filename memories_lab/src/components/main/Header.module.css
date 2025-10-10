@@ -20,6 +20,7 @@
   position: relative;
   border-radius: var(--radius-sm);
   transition: all var(--transition-base);
+  overflow: visible;
 }
 
 .logo::before {
