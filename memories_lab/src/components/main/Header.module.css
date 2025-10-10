@@ -16,6 +16,55 @@
   color: white;
   font-weight: 600;
   font-size: 1.1rem;
+  cursor: pointer;
+  position: relative;
+  padding: 8px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+}
+
+.logo::before {
+  content: '홈으로';
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  color: white;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logo:hover {
+  background: var(--bg-hover);
+  transform: translateY(-2px);
+}
+
+.logo:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+  bottom: -38px;
+}
+
+.logo:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.logo img {
+  transition: all var(--transition-base);
+}
+
+.logo:hover img {
+  filter: brightness(1.1) drop-shadow(0 0 8px rgba(102, 126, 234, 0.4));
 }
 
 .logoText {
