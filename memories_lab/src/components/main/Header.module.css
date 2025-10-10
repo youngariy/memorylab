@@ -18,7 +18,6 @@
   font-size: 1.1rem;
   cursor: pointer;
   position: relative;
-  padding: 8px;
   border-radius: var(--radius-sm);
   transition: all var(--transition-base);
 }
