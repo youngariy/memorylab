@@ -66,6 +66,9 @@ public class SecurityConfig {
                         // 5) 게시판 목록/상세 공개
                         .requestMatchers(HttpMethod.GET, "/api/board", "/api/board/**").permitAll()
 
+                        // 5-1) Admin API 임시 허용 (TODO: ADMIN 역할 체크 추가 필요)
+                        .requestMatchers("/api/admin/**").permitAll()
+
                         // 6) 그 외 /api/** 는 인증 필요
                         .requestMatchers("/api/**").authenticated()
 

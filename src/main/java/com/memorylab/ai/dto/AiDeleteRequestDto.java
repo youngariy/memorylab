@@ -9,5 +9,5 @@ import lombok.Getter;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class AiDeleteRequestDto {
     private String task_id;
-    private String file_url;
+    private String filename;
 }

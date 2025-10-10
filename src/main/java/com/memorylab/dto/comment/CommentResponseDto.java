@@ -11,6 +11,7 @@ public record CommentResponseDto(
         String content,
         String authorNickname,
         Long authorId,
+        Long parentId,
         LocalDateTime createdAt,
         LocalDateTime modifiedAt
 ) {
@@ -20,6 +21,7 @@ public record CommentResponseDto(
                 .content(comment.getContent())
                 .authorNickname(comment.getUser() != null ? comment.getUser().getNickname() : "(알 수 없음)")
                 .authorId(comment.getUser() != null ? comment.getUser().getId() : null)
+                .parentId(comment.getParent() != null ? comment.getParent().getId() : null)
                 .createdAt(comment.getCreatedAt())
                 .modifiedAt(comment.getModifiedAt())
                 .build();

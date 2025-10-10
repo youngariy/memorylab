@@ -64,20 +64,21 @@ public class BoardController {
     public ResponseEntity<BoardPageResponseDto> getBoardList(
             @PageableDefault(size = 12, sort = {"createdAt", "id"}, direction = Sort.Direction.DESC)
             Pageable pageable,
+            @RequestParam(required = false) String category,
             @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = (userDetails == null) ? null :
-                memberRepository.findByEmail(userDetails.getUsername()).map(Member::getId).orElse(null);
-        
-        return ResponseEntity.ok(boardService.getBoardList(pageable, userId));
+        Member viewer = (userDetails == null) ? null :
+                memberRepository.findByEmail(userDetails.getUsername()).orElse(null);
+
+        return ResponseEntity.ok(boardService.getBoardList(pageable, viewer, category));
     }
 
     @GetMapping("/{boardId:\\d+}")
     public ResponseEntity<BoardDetailResponseDto> getBoardDetail(
             @PathVariable Long boardId,
             @AuthenticationPrincipal UserDetails userDetails) {
-        Long userId = (userDetails == null) ? null :
-                memberRepository.findByEmail(userDetails.getUsername()).map(Member::getId).orElse(null);
-        BoardDetailResponseDto boardDetail = boardService.getBoardDetail(boardId, userId);
+        Member viewer = (userDetails == null) ? null :
+                memberRepository.findByEmail(userDetails.getUsername()).orElse(null);
+        BoardDetailResponseDto boardDetail = boardService.getBoardDetail(boardId, viewer);
         return ResponseEntity.ok(boardDetail);
     }
 

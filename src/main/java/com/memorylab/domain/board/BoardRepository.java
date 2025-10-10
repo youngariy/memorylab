@@ -19,6 +19,18 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     @EntityGraph(attributePaths = {"user"})
     Page<Board> findByUser_Id(Long userId, Pageable pageable);
 
+    @EntityGraph(attributePaths = {"user"})
+    Page<Board> findByCategory(Category category, Pageable pageable);
+
+    // Visibility-aware queries
+    @EntityGraph(attributePaths = {"user"})
+    @Query("SELECT b FROM Board b WHERE b.visibility = 'PUBLIC' OR b.user.id = :userId ORDER BY b.createdAt DESC")
+    Page<Board> findAllVisibleToUser(@Param("userId") Long userId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user"})
+    @Query("SELECT b FROM Board b WHERE b.category = :category AND (b.visibility = 'PUBLIC' OR b.user.id = :userId) ORDER BY b.createdAt DESC")
+    Page<Board> findByCategoryVisibleToUser(@Param("category") Category category, @Param("userId") Long userId, Pageable pageable);
+
     Optional<Board> findByAiTaskId(String aiTaskId);
 
     // --- 스케줄러용 메소드 (복원) ---

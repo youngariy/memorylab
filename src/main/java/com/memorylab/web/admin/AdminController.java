@@ -2,17 +2,22 @@ package com.memorylab.web.admin;
 
 import com.memorylab.domain.board.Board;
 import com.memorylab.domain.board.BoardRepository;
+import com.memorylab.domain.board.ThumbnailStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Controller;
+import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
-@Controller
-@RequestMapping("/admin")
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/admin")
 @RequiredArgsConstructor
 public class AdminController {
 
@@ -20,7 +25,7 @@ public class AdminController {
 
     @PostMapping("/board/reset-conversion")
     @Transactional
-    public String resetConversionStatus(@RequestParam("boardId") Long boardId) {
+    public ResponseEntity<Map<String, Object>> resetConversionStatus(@RequestParam("boardId") Long boardId) {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Board not found"));
 
@@ -31,6 +36,35 @@ public class AdminController {
         // }
 
         boardRepository.save(board);
-        return "redirect:/board/view?id=" + boardId;
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "Board conversion status reset successfully",
+            "boardId", boardId
+        ));
+    }
+
+    @PostMapping("/thumbnails/regenerate-all")
+    @Transactional
+    public ResponseEntity<Map<String, Object>> regenerateAllThumbnails() {
+        // 모든 READY 상태의 썸네일을 PENDING으로 변경하여 재생성
+        List<Board> boards = boardRepository.findAll();
+        int count = 0;
+
+        for (Board board : boards) {
+            if (board.getThumbnailStatus() == ThumbnailStatus.READY && board.getOriginalVideoPath() != null) {
+                board.setThumbnailStatus(ThumbnailStatus.PENDING);
+                board.setRetryCount(0);
+                count++;
+            }
+        }
+
+        boardRepository.saveAll(boards);
+
+        return ResponseEntity.ok(Map.of(
+            "success", true,
+            "message", "All thumbnails marked for regeneration with new 16:10 aspect ratio",
+            "count", count
+        ));
     }
 }

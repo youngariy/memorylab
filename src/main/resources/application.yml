@@ -49,7 +49,7 @@ logging:
 # --- 3D 모델 변환(GPU 서버) 시스템 설정 ---
 gpu-server:
   # GPU API 서버의 기본 주소입니다.
-  base-url: "http://mlab-api.snowytiger.me"
+  base-url: "http://mlab-api.snowytiger.me:40577"
   # GPU 서버에서 오는 웹훅 요청을 검증하기 위한 비밀 키입니다.
   webhook-secret: ${GPU_WEBHOOK_SECRET:"DefaultGpuWebhookSecretKeyForDev"}
 
@@ -65,3 +65,9 @@ file:
       - "mlab-api.snowytiger.me"
     # 다운로드를 시작하기 위해 필요한 최소 디스크 여유 공간(MB)입니다.
     min-free-space-mb: 100
+
+# 파일 업로드 및 정적 리소스 제공 설정
+app:
+  upload:
+    root-dir: "C:/Users/dudqj/Desktop/memorylab/uploads"
+    converted-base-url: "/uploads"

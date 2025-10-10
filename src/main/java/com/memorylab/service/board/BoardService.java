@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -45,6 +46,11 @@ public class BoardService {
 
     // --- 핵심 로직: 실시간 상태 매핑 --- //
     private BoardStatus mapToBoardStatus(Board b) {
+        // 동영상이 없는 게시글은 바로 READY 상태 (단순 게시글)
+        if (b.getOriginalVideoPath() == null || b.getOriginalVideoPath().isBlank()) {
+            return BoardStatus.READY;
+        }
+
         // 이 로직은 새로운 ExternalStatus와 연계하여 재검토될 수 있으나, 현재는 컴파일을 위해 유지합니다.
         TranscodeStatus t = b.getTranscodeStatus();
         ThumbnailStatus th = b.getThumbnailStatus();
@@ -77,14 +83,33 @@ public class BoardService {
         log.info("Saved initial board with id: {}", board.getId());
 
         if (videoFile != null && !videoFile.isEmpty()) {
-            String uniqueFilename = board.getId() + "_" + StringUtils.cleanPath(Objects.requireNonNull(videoFile.getOriginalFilename()));
+            // 원본 파일명에서 확장자 추출
+            String originalFilename = StringUtils.cleanPath(Objects.requireNonNull(videoFile.getOriginalFilename()));
+            String extension = "";
+            int dotIndex = originalFilename.lastIndexOf('.');
+            if (dotIndex > 0) {
+                extension = originalFilename.substring(dotIndex); // .mp4
+            }
+
+            // 완전히 난수화된 파일명 생성 (UUID만 사용 - 예측 불가)
+            String uniqueFilename = UUID.randomUUID().toString() + extension;
             Path videoPath = fileService.getVideoPath(uniqueFilename);
             fileService.saveFile(videoFile, videoPath);
             board.setOriginalVideoPath(videoPath.toString());
-            
+
             // 썸네일과 동영상 변환 상태를 PENDING으로 설정
             board.setThumbnailStatus(ThumbnailStatus.PENDING);
             board.setTranscodeStatus(TranscodeStatus.PENDING); // 이 상태를 기반으로 다른 서비스가 동작
+
+            // 게시글 저장 후 AI 서버에 업로드 요청
+            Board savedBoard = boardRepository.save(board);
+
+            // AI 서버에 3D 변환 요청 (비동기)
+            String fileUrl = "uploads/videos/" + uniqueFilename; // 상대 경로 (앞에 https://mlab.snowytiger.me/가 자동으로 붙음)
+            log.info("Requesting AI server upload for boardId={}, filename={}, fileUrl={}", savedBoard.getId(), uniqueFilename, fileUrl);
+            aiServerClient.requestUpload(savedBoard, fileUrl);
+
+            return BoardDetailResponseDto.fromEntity(savedBoard, false, mapToBoardStatus(savedBoard));
         }
 
         Board savedBoard = boardRepository.save(board);
@@ -125,10 +150,34 @@ public class BoardService {
         }
     }
 
-    public BoardPageResponseDto getBoardList(Pageable pageable, Long userId) {
+    public BoardPageResponseDto getBoardList(Pageable pageable, Member viewer, String categoryStr) {
         Pageable p = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<Board> boards = boardRepository.findAll(p);
-        Set<Long> likedBoardIds = getLikedBoardIds(boards.getContent(), userId);
+        Page<Board> boards;
+
+        // Check if user is admin
+        boolean isAdmin = viewer != null && viewer.getRoles().stream().anyMatch("ROLE_ADMIN"::equals);
+        Long viewerId = viewer != null ? viewer.getId() : -1L;
+
+        // Admin can see all posts, others only see public posts + their own private posts
+        if (isAdmin) {
+            // Admin sees everything
+            if (categoryStr != null && !categoryStr.isBlank()) {
+                Category category = Category.parse(categoryStr);
+                boards = boardRepository.findByCategory(category, p);
+            } else {
+                boards = boardRepository.findAll(p);
+            }
+        } else {
+            // Regular users see only public + their own private posts
+            if (categoryStr != null && !categoryStr.isBlank()) {
+                Category category = Category.parse(categoryStr);
+                boards = boardRepository.findByCategoryVisibleToUser(category, viewerId, p);
+            } else {
+                boards = boardRepository.findAllVisibleToUser(viewerId, p);
+            }
+        }
+
+        Set<Long> likedBoardIds = getLikedBoardIds(boards.getContent(), viewerId);
         Page<BoardListResponseDto> dtoPage = boards.map(b -> BoardListResponseDto.fromEntity(b, likedBoardIds.contains(b.getId()), mapToBoardStatus(b)));
         return BoardPageResponseDto.fromPage(dtoPage);
     }
@@ -142,11 +191,23 @@ public class BoardService {
     }
 
     @Transactional
-    public BoardDetailResponseDto getBoardDetail(Long boardId, Long userId) {
+    public BoardDetailResponseDto getBoardDetail(Long boardId, Member viewer) {
         Board board = boardRepository.findByIdWithUser(boardId)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Board not found with id: " + boardId));
+
+        // Check visibility: PRIVATE posts can only be viewed by author or admin
+        if (board.getVisibility() == Visibility.PRIVATE) {
+            boolean isAuthor = viewer != null && Objects.equals(board.getUser().getId(), viewer.getId());
+            boolean isAdmin = viewer != null && viewer.getRoles().stream().anyMatch("ROLE_ADMIN"::equals);
+
+            if (!isAuthor && !isAdmin) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You do not have permission to view this private post.");
+            }
+        }
+
         board.increaseViewCount();
-        Set<Long> likedBoardIds = getLikedBoardIds(List.of(board), userId);
+        Long viewerId = viewer != null ? viewer.getId() : null;
+        Set<Long> likedBoardIds = getLikedBoardIds(List.of(board), viewerId);
         return BoardDetailResponseDto.fromEntity(board, likedBoardIds.contains(board.getId()), mapToBoardStatus(board));
     }
 

@@ -25,12 +25,22 @@ public class AiServerClient {
     private final WebClient webClient;
     private final BoardRepository boardRepository;
 
-    @Value("${ai.server.base-url}")
+    @Value("${gpu-server.base-url}")
     private String aiServerBaseUrl;
 
     public void requestUpload(Board board, String fileUrl) {
-        String filename = board.getOriginalVideoPath();
+        // filename: 전체 경로에서 파일명만 추출 (예: /path/to/UUID.mp4 -> UUID.mp4)
+        String fullPath = board.getOriginalVideoPath();
+        String filename = "";
+        if (fullPath != null) {
+            int lastSlash = Math.max(fullPath.lastIndexOf('/'), fullPath.lastIndexOf('\\'));
+            filename = lastSlash >= 0 ? fullPath.substring(lastSlash + 1) : fullPath;
+        }
+
+        // 프로토콜: filename은 UUID.mp4, file_url은 uploads/videos/UUID.mp4
         AiUploadRequestDto requestDto = new AiUploadRequestDto(filename, fileUrl);
+
+        log.info("AI 서버 업로드 요청 준비: filename={}, file_url={}", filename, fileUrl);
 
         webClient.post()
                 .uri(aiServerBaseUrl + "/upload")
@@ -67,7 +77,7 @@ public class AiServerClient {
         AiDeleteRequestDto requestDto = new AiDeleteRequestDto(taskId, null);
 
         webClient.method(HttpMethod.DELETE)
-                .uri(aiServerBaseUrl + "/delete")
+                .uri(aiServerBaseUrl + "/task")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .bodyValue(requestDto)
                 .retrieve()

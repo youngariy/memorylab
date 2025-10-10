@@ -31,9 +31,16 @@ public class CommentService {
         Board board = boardRepository.findById(boardId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid board ID: " + boardId));
 
+        Comment parent = null;
+        if (requestDto.parentId() != null) {
+            parent = commentRepository.findById(requestDto.parentId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid parent comment ID: " + requestDto.parentId()));
+        }
+
         Comment comment = Comment.builder()
                 .board(board)
                 .user(user)
+                .parent(parent)
                 .content(requestDto.content())
                 .build();
 

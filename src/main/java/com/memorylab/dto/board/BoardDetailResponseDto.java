@@ -34,10 +34,13 @@ public record BoardDetailResponseDto(
     // 썸네일 관련 필드
     String thumbnailPath,
     ThumbnailStatus thumbnailStatus,
-    
+
     // 동영상 변환 관련 필드
     String convertedVideoPath,
     TranscodeStatus transcodeStatus,
+
+    // 동영상 유무
+    boolean hasVideo,
 
     // 최종 계산된 상태
     BoardStatus status
@@ -69,6 +72,9 @@ public record BoardDetailResponseDto(
             .aiTaskId(board.getAiTaskId())
             .plyPath(board.getPlyPath())
             .gpuErrorMessage(board.getGpuErrorMessage())
+
+            // 동영상 유무
+            .hasVideo(board.getOriginalVideoPath() != null && !board.getOriginalVideoPath().isBlank())
 
             // 최종 계산된 상태 주입
             .status(calculatedStatus)

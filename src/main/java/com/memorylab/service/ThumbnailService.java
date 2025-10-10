@@ -50,6 +50,7 @@ public class ThumbnailService {
                 "-i", videoPath.toString(),
                 "-ss", "00:00:01.000", // 1초 시점의 프레임
                 "-vframes", "1",
+                "-vf", "scale=960:600:force_original_aspect_ratio=increase,crop=960:600", // 16:10 비율, 중앙 크롭 (검은 테두리 없음)
                 "-q:v", "2", // 높은 품질
                 thumbnailPath.toString(),
                 "-y" // 덮어쓰기 허용
