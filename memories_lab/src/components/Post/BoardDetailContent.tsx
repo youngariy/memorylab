@@ -4,6 +4,7 @@ import { boardEndpoints, commentEndpoints } from '@/services/endpoints';
 import { useAuth } from '@/hooks/useAuth';
 import type { BoardDetail, Comment } from '@/types/api';
 import { categoryToLabel, visibilityToLabel } from '@/types/api';
+import { getErrorMessage } from '@/utils/errorMessages';
 import styles from './BoardDetailContent.module.css';
 import processingIcon from '@/assets/progress.png';
 import heartIcon from '@/assets/heart.svg';
@@ -475,6 +476,18 @@ export default function BoardDetailContent() {
         </div>
       )}
 
+      {/* FAILED section - 3D 변환 실패 상태 */}
+      {board.hasVideo && (board.status === 'FAILED_PROCESS' || board.status === 'FAILED_DOWNLOAD') && (
+        <div className={styles.failedSection}>
+          <div className={styles.failedHeader}>
+            <h2 className={styles.failedTitle}>❌ 3D 모델 변환에 실패했습니다</h2>
+            <p className={styles.failedText}>
+              {getErrorMessage(board.externalErrorCode, board.externalErrorDetail || undefined)}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* 3D Model Ready section - 동영상이 있는 게시글만 표시 */}
       {board.hasVideo && board.status === 'READY' && board.plyPath && (
         <div className={styles.modelReadySection}>
@@ -494,7 +507,7 @@ export default function BoardDetailContent() {
         <div className={styles.header}>
           <div className={styles.titleContainer}>
             <div className={styles.heartContainer}>
-              <img src={heartDefaultIcon} alt="heart default icon" />
+              <img src={heartIcon} alt="heart icon" />
               <span className={styles.heartCount}>{board.likeCount}</span>
             </div>
             <h1 className={styles.title}>{board.title}</h1>

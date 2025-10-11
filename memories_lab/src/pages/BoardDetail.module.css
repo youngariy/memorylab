@@ -8,8 +8,12 @@
 .boardDetailContent {
   width: 100%;
   padding: 60px;
-  background-color: #35353a;
-  border-radius: 8px;
+  background: var(--bg-tertiary);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn 0.3s ease-out;
 }
 
 @media (max-width: 1200px) {

@@ -1,6 +1,6 @@
 .container {
-  background: #35353a;
-  border-radius: 8px;
+  background: transparent;
+  border-radius: var(--radius-lg);
 }
 
 /* Loading & Error States */
@@ -18,67 +18,69 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #35353a;
-  border-top-color: #007bff;
+  border: 4px solid var(--bg-tertiary);
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 .retryButton {
-  background: #007bff;
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 12px 24px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
 }
 
 .retryButton:hover {
-  background: #0056b3;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .badgesContainer {
   display: flex;
-  gap: 8px;
-  margin-bottom: 15px;
+  gap: 10px;
+  margin-bottom: 20px;
+  margin-top: 16px;
 }
 
 .categoryBadge {
   display: inline-block;
-  background: #007bff;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 4px;
+  background: rgba(102, 126, 234, 0.15);
+  color: #9db4ff;
+  border: 1px solid rgba(102, 126, 234, 0.3);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
+  box-shadow: 0 0 10px rgba(102, 126, 234, 0.15);
 }
 
 .privateBadge {
   display: inline-block;
-  background: rgba(244, 67, 54, 0.2);
-  color: #f44336;
+  background: rgba(244, 67, 54, 0.15);
+  color: #ff6b6b;
   padding: 6px 12px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
+  border: 1px solid rgba(244, 67, 54, 0.3);
 }
 
 .commentError {
-  background: #ff4444;
-  color: white;
-  padding: 12px;
-  border-radius: 6px;
+  background: rgba(220, 53, 69, 0.15);
+  color: #ff6b6b;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
   margin-bottom: 15px;
   font-size: 14px;
+  border-left: 4px solid #dc3545;
 }
 
 .emptyComments {
@@ -100,24 +102,28 @@
 .editInput {
   width: 100%;
   min-height: 80px;
-  background: #35353a;
-  border: 1px solid #555;
-  border-radius: 6px;
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
   padding: 12px;
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
   font-family: inherit;
+  transition: all var(--transition-base);
 }
 
 .editInput::placeholder {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .editInput:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--primary);
+  background: var(--bg-tertiary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
 }
 
 .editFormButtons {
@@ -130,13 +136,18 @@
 .refreshButton {
   background: none;
   border: none;
-  padding: 0;
+  padding: 4px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all var(--transition-base);
+  border-radius: var(--radius-sm);
 }
 
 .refreshButton:hover {
-  opacity: 0.7;
+  background: var(--bg-hover);
+}
+
+.refreshButton:hover img {
+  transform: rotate(180deg);
 }
 
 .refreshButton:disabled {
@@ -148,6 +159,7 @@
   width: 18px;
   height: 18px;
   transition: transform 0.3s ease;
+  display: block;
 }
 
 /* 새로고침 중 회전 애니메이션 */
@@ -163,11 +175,14 @@
   justify-content: center;
   align-items: center;
   gap: 32px;
-  background: #2a2a2f;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 40px;
   text-align: center;
-  border-bottom: 1px solid #444;
-  border-radius: 8px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn 0.3s ease-out;
 }
 
 .processingText {
@@ -182,6 +197,58 @@
   font-size: 18px;
   line-height: 25px;
   font-weight: 400;
+}
+
+/* 3D 변환 실패 섹션 */
+.failedSection {
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  background: rgba(220, 53, 69, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+  padding: 40px;
+  text-align: center;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  margin-bottom: 30px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.failedHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.failedTitle {
+  color: #ff6b6b;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.failedText {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.errorDetail {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: var(--radius-md);
+  color: #ff6b6b;
+  font-size: 14px;
+  text-align: left;
+}
+
+.errorDetail strong {
+  color: #fff;
+  margin-right: 8px;
 }
 
 /* 메인 컨텐츠 */
@@ -200,20 +267,36 @@
 .titleContainer {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 .heartContainer {
-  width: 40px;
-  height: 40px;
+  width: 45px;
+  height: 45px;
   display: flex;
   align-items: center;
   flex-direction: column;
-  background-color: #0000ff;
-  border-radius: 8px;
-  padding: 5px 10px;
+  justify-content: center;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  padding: 6px;
   gap: 2px;
   box-sizing: border-box;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.heartContainer:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-md);
+}
+
+.heartContainer img {
+  filter: brightness(0) saturate(100%) invert(43%) sepia(85%) saturate(4823%) hue-rotate(345deg) brightness(99%) contrast(95%);
+  width: 15px;
+  height: 15px;
 }
 
 .heartCount {
@@ -238,46 +321,64 @@
 .likeButton {
   display: flex;
   gap: 4px;
-  background: #2e2e33;
+  align-items: center;
+  background: var(--bg-secondary);
   color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.likeButton:hover {
+  background: var(--bg-hover);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .editButton {
-  background: #4a4a4f;
+  background: var(--bg-secondary);
   color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
 .editButton:hover {
-  background: #5a5a5f;
+  background: var(--bg-hover);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .deleteButton {
-  background: #dc3545;
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 8px;
+  background: rgba(220, 53, 69, 0.2);
+  color: #ff6b6b;
+  border: 1px solid rgba(220, 53, 69, 0.4);
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
 .deleteButton:hover {
-  background: #c82333;
+  background: rgba(220, 53, 69, 0.3);
+  border-color: #dc3545;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
 }
 
 .authorInfo {
@@ -302,15 +403,17 @@
 .contentText {
   width: 100%;
   min-height: 280px;
-  background-color: #2e2e33;
-  color: #fff;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
   font-size: 16px;
   margin-top: 12px;
-  border: none;
   resize: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 24px;
   overflow-y: auto;
+  box-shadow: var(--shadow-sm);
 }
 
 .stats {
@@ -345,13 +448,21 @@
 
 .commentButton {
   height: 30px;
-  background: none;
-  border: 1px solid #fff;
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
   font-size: 12px;
   cursor: pointer;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
+}
+
+.commentButton:hover {
+  background: var(--bg-hover);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
 }
 
 .commentTitle {
@@ -365,10 +476,20 @@
 }
 
 .comment {
-  background: #2a2a2f;
-  border-radius: 8px;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
   padding: 20px;
-  margin-bottom: 0; /* 기존 margin-bottom: 10px 제거 */
+  margin-bottom: 0;
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.comment:hover {
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
 }
 
 .commentHeader {
@@ -471,23 +592,27 @@
 .commentInput {
   flex: 1;
   min-height: 140px;
-  background-color: transparent;
-  border: 1px solid #fff;
-  border-radius: 8px;
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
   padding: 20px;
   font-size: 16px;
   line-height: 40px;
-  border-radius: 8px;
+  transition: all var(--transition-base);
+  font-family: inherit;
 }
 
 .commentInput::placeholder {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .commentInput:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--primary);
+  background: var(--bg-tertiary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
 }
 
 .commentFormFooter {
@@ -507,23 +632,33 @@
   justify-content: center;
   min-width: 110px;
   min-height: 140px;
-  background: #0000ff;
+  background: var(--gradient-primary);
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   font-size: 18px;
   line-height: 24px;
   font-weight: 600;
   cursor: pointer;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-md);
 }
 
-.submitButton:hover {
-  background: #0056b3;
+.submitButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.submitButton:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 
 .submitButton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  background: linear-gradient(135deg, var(--text-disabled) 0%, var(--text-muted) 100%);
+  box-shadow: none;
 }
 
 /* 모바일 반응형 */
@@ -534,8 +669,10 @@
   }
 
   .processingSection {
-    background: #2a2a2f;
-    border-radius: 8px;
+    background: var(--bg-secondary);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
     margin-bottom: 20px;
   }
 
@@ -559,7 +696,7 @@
   }
 
   .commentSection {
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     border-top: none;
     padding: 20px;
   }
@@ -609,27 +746,33 @@
 }
 
 .commentActionButton {
-  background: none;
-  border: 1px solid #555;
-  color: #aaa;
+  background: var(--bg-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
   padding: 4px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
 .commentActionButton:hover {
-  background: #444;
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
 }
 
 /* 답글 작성 폼 */
 .replyForm {
   margin-top: 15px;
   padding: 15px;
-  background: #1f1f24;
-  border-radius: 8px;
+  background: rgba(31, 31, 36, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .replyFormContainer {
@@ -659,24 +802,28 @@
 .replyInput {
   width: 100%;
   min-height: 80px;
-  background: #35353a;
-  border: 1px solid #555;
-  border-radius: 6px;
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
   padding: 12px;
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
   font-family: inherit;
+  transition: all var(--transition-base);
 }
 
 .replyInput::placeholder {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .replyInput:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--primary);
+  background: var(--bg-tertiary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
 }
 
 .replyFormButtons {
@@ -687,34 +834,38 @@
 
 .cancelButton {
   background: transparent;
-  color: #aaa;
-  border: 1px solid #555;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .cancelButton:hover {
-  background: #444;
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .replySubmitButton {
-  background: #007bff;
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
 .replySubmitButton:hover {
-  background: #0056b3;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 /* 모바일 반응형 대댓글 */
@@ -782,10 +933,21 @@
 
 /* 답글 댓글 스타일 */
 .replyComment {
-  background: #1f1f24; /* 더 어두운 배경으로 구분 */
+  background: rgba(31, 31, 36, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   margin-top: 10px;
   padding: 15px;
-  border-left: 2px solid rgba(74, 144, 226, 0.3); /* 미묘한 왼쪽 테두리 */
+  border-left: 3px solid rgba(102, 126, 234, 0.5);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.replyComment:hover {
+  border-left-color: var(--primary);
+  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateX(2px);
 }
 
 /* 답글 버튼 스타일 */
@@ -815,8 +977,11 @@
 .replyForm {
   margin-top: 15px;
   padding: 15px;
-  background: #1f1f24;
-  border-radius: 8px;
+  background: rgba(31, 31, 36, 0.5);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
 }
 
 .replyFormContainer {
@@ -846,24 +1011,28 @@
 .replyInput {
   width: 100%;
   min-height: 80px;
-  background: #35353a;
-  border: 1px solid #555;
-  border-radius: 6px;
-  color: #fff;
+  background: var(--bg-secondary);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
   padding: 12px;
   font-size: 14px;
   line-height: 1.5;
   resize: vertical;
   font-family: inherit;
+  transition: all var(--transition-base);
 }
 
 .replyInput::placeholder {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .replyInput:focus {
   outline: none;
-  border-color: #007bff;
+  border-color: var(--primary);
+  background: var(--bg-tertiary);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+  transform: translateY(-1px);
 }
 
 .replyFormButtons {
@@ -874,34 +1043,38 @@
 
 .cancelButton {
   background: transparent;
-  color: #aaa;
-  border: 1px solid #555;
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--transition-base);
 }
 
 .cancelButton:hover {
-  background: #444;
-  color: #fff;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.15);
 }
 
 .replySubmitButton {
-  background: #007bff;
+  background: var(--gradient-primary);
   color: white;
   border: none;
   padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all var(--transition-base);
+  box-shadow: var(--shadow-sm);
 }
 
 .replySubmitButton:hover {
-  background: #0056b3;
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 /* 댓글 푸터 수정 */
@@ -966,10 +1139,13 @@
   flex-direction: column;
   gap: 20px;
   padding: 40px;
-  background: #2a2a2f;
-  border-radius: 12px;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-lg);
   margin-bottom: 30px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-xl);
+  animation: fadeIn 0.3s ease-out;
 }
 
 .modelReadyHeader {

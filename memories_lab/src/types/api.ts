@@ -131,6 +131,8 @@ export interface BoardDetail {
   plyPath: string | null;
   aiTaskId: string | null;
   gpuErrorMessage: string | null;
+  externalErrorCode: string | null;
+  externalErrorDetail: string | null;
   transcodeStatus: string;
   hasVideo: boolean;  // 동영상 파일 업로드 여부
   status: ConversionStatus;

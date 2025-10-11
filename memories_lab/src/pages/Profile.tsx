@@ -166,11 +166,14 @@ function Profile() {
                       <td className={styles.titleCell}>
                         <div className={styles.titleLine}>
                           <span className={styles.titleText}>{post.title}</span>
-                          {post.status === 'READY' && (
+                          {post.hasVideo && post.status === 'READY' && (
                             <span className={styles.icon}>🎥</span>
                           )}
-                          {(post.status === 'PROCESSING' || post.status === 'DISPATCHED') && (
+                          {post.hasVideo && (post.status === 'PROCESSING' || post.status === 'DISPATCHED' || post.status === 'DOWNLOADING') && (
                             <span className={styles.icon}>⏳</span>
+                          )}
+                          {post.hasVideo && (post.status === 'FAILED_PROCESS' || post.status === 'FAILED_DOWNLOAD') && (
+                            <span className={styles.icon}>❌</span>
                           )}
                           {post.visibility === 'PRIVATE' && (
                             <span className={styles.privateBadge}>나만보기</span>

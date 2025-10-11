@@ -148,7 +148,7 @@ export default function Board({ board }: BoardProps) {
                 <span>🔄 3D 모델 변환 중...</span>
                 {board.progress && <span>{board.progress}%</span>}
               </div>
-            ) : board.status === 'FAILED' ? (
+            ) : board.status === 'FAILED_PROCESS' || board.status === 'FAILED_DOWNLOAD' ? (
               <div className={`${styles.statusBadge} ${styles.error}`}>
                 <span>❌ 변환 실패</span>
               </div>

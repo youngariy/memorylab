@@ -26,7 +26,7 @@ export default function PlyViewer({ plyPath }: { plyPath: string }) {
       0.1,
       1000
     );
-    camera.position.set(0, 0, 2);
+    camera.position.set(0, 0, 0.5);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(containerRef.current.clientWidth, containerRef.current.clientHeight);
@@ -36,7 +36,7 @@ export default function PlyViewer({ plyPath }: { plyPath: string }) {
     // Create Gaussian Splat Viewer
     const viewer = new GaussianSplats3D.Viewer({
       cameraUp: [0, 1, 0],
-      initialCameraPosition: [0, 0, 2],
+      initialCameraPosition: [0, 0, 0.5],
       initialCameraLookAt: [0, 0, 0],
       sphericalHarmonicsDegree: 2,
       renderer: renderer,
