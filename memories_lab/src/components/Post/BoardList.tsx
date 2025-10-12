@@ -17,6 +17,7 @@ export default function BoardList({ category, searchQuery, onTotalCountChange }:
   const [boards, setBoards] = useState<BoardSummary[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -42,6 +43,7 @@ export default function BoardList({ category, searchQuery, onTotalCountChange }:
       });
       setBoards(response.content);
       setTotalPages(response.totalPages);
+      setTotalElements(response.totalElements);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '게시글을 불러오는데 실패했습니다.';
       setError(errorMessage);
@@ -66,10 +68,15 @@ export default function BoardList({ category, searchQuery, onTotalCountChange }:
     );
   }, [boards, searchQuery]);
 
-  // Update total count whenever filtered boards change
+  // Update total count whenever filtered boards or totalElements change
   useEffect(() => {
-    onTotalCountChange(filteredBoards.length);
-  }, [filteredBoards, onTotalCountChange]);
+    // 검색 중이면 필터링된 게시글 개수, 아니면 전체 게시글 개수
+    if (searchQuery.trim()) {
+      onTotalCountChange(filteredBoards.length);
+    } else {
+      onTotalCountChange(totalElements);
+    }
+  }, [filteredBoards, totalElements, searchQuery, onTotalCountChange]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 0 && newPage < totalPages) {

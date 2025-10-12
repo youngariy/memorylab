@@ -14,6 +14,7 @@ build/
 *.jar
 *.war
 *.class
+*.tsbuildinfo
 
 # Logs
 *.log
@@ -44,3 +45,16 @@ uploads/
 
 # Test SQL files
 *.sql
+
+# Sensitive files - DO NOT COMMIT
+*.pem
+*.key
+server_backup_*/
+config/memorylab.env
+*.postman_collection.json
+test_callback.json
+concurrent_upload_test.py
+nginx_ply_location.conf
+
+# Local settings
+.claude/settings.local.json

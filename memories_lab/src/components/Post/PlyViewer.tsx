@@ -12,8 +12,14 @@ export default function PlyViewer({ plyPath }: { plyPath: string }) {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    // Convert server absolute path to nginx URL path
-    const normalizedPath = plyPath.replace('/srv/memorylab/uploads/', '/uploads/');
+    // Convert server path to nginx URL path
+    // Handle both absolute paths (/srv/memorylab/uploads/...) and relative paths (/ply/...)
+    let normalizedPath = plyPath;
+    if (plyPath.startsWith('/srv/memorylab/uploads/')) {
+      normalizedPath = plyPath.replace('/srv/memorylab/uploads/', '/uploads/');
+    } else if (plyPath.startsWith('/ply/')) {
+      normalizedPath = `/uploads${plyPath}`;
+    }
     const plyUrl = `https://mlab.snowytiger.me${normalizedPath}`;
 
     console.log('Starting Gaussian Splatting load from:', plyUrl);
@@ -60,6 +66,29 @@ export default function PlyViewer({ plyPath }: { plyPath: string }) {
         console.log('Gaussian Splat loaded successfully');
         setLoading(false);
         viewer.start();
+
+        // Try to configure controls for unlimited rotation
+        try {
+          // @ts-ignore - accessing internal controls
+          const controls = viewer.controls;
+          if (controls) {
+            // Set very large limits for virtually unlimited rotation
+            controls.minPolarAngle = -Infinity;       // Unlimited vertical (up)
+            controls.maxPolarAngle = Infinity;        // Unlimited vertical (down)
+            controls.minAzimuthAngle = -Infinity;     // Unlimited horizontal (left)
+            controls.maxAzimuthAngle = Infinity;      // Unlimited horizontal (right)
+
+            controls.enableRotate = true;
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = true;
+            controls.enablePan = true;
+
+            console.log('Camera controls configured: unlimited rotation enabled');
+          }
+        } catch (e) {
+          console.warn('Could not configure camera controls:', e);
+        }
       })
       .catch((err: Error) => {
         console.error('Error loading Gaussian Splat:', err);
